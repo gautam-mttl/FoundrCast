@@ -3,7 +3,7 @@
 A **complex backend application built with JavaScript** that powers a video-hosting platform similar to YouTube.
 
 - [Project Model / Architecture](https://app.eraser.io/workspace/YtPqZ1VogxGy1jzIDkzj)
-- - [API Documentation (Postman)](https://documenter.getpostman.com/view/41863970/2sBXirhnZn)
+- [API Documentation (Postman)](https://documenter.getpostman.com/view/41863970/2sBXirhnZn)
 
 ---
 
