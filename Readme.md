@@ -1,103 +1,150 @@
-# 🎬 Video Tube
-
-A **complex backend application built with JavaScript** that powers a video-hosting platform similar to YouTube.
-
-- [Project Model / Architecture](https://app.eraser.io/workspace/YtPqZ1VogxGy1jzIDkzj)
-- [API Documentation (Postman)](https://documenter.getpostman.com/view/41863970/2sBXirhnZn)
-
+# FoundrCast
+ 
+> A video-first feedback platform for founders and VCs — built on a production-grade Node.js backend.
+ 
+[![API Docs](https://img.shields.io/badge/API-Postman_Docs-orange?style=flat-square)](https://documenter.getpostman.com/view/41863970/2sBXirhnZn)
+[![Architecture](https://img.shields.io/badge/Architecture-Eraser.io-blue?style=flat-square)](https://app.eraser.io/workspace/YtPqZ1VogxGy1jzIDkzj)
+[![License](https://img.shields.io/badge/License-ISC-green?style=flat-square)](#license)
+ 
 ---
-
-## 📌 Summary
-
-This project is a **full-fledged backend system** built using **Node.js, Express.js, MongoDB, Mongoose, JWT, bcrypt, and other modern technologies**.  
-It includes all essential backend features required for a scalable application.
-
-The platform supports:
-
-- User Login & Signup  
-- Video Upload & Management  
-- Likes & Dislikes  
-- Comments & Replies  
-- Subscribe / Unsubscribe  
-- Secure Authentication & Authorization  
-
-The project follows **industry-standard practices** such as **JWT authentication, password hashing, access tokens, refresh tokens, and environment-based configuration**.
-
-Significant effort has been invested in building this project, making it a strong **learning resource for backend development**.
-
-
+ 
+## The Idea
+ 
+This started as a learning project — built to understand how industry-grade backends actually work.  
+JWT auth, MongoDB schema design, REST API structure, subscription workflows — the fundamentals.
+ 
+But somewhere during development, the architecture started feeling familiar for a problem I kept noticing:
+ 
+**Founders have no good place to show their product in motion and get real feedback from people who matter.**
+ 
+Loom links get buried in Slack. YouTube is too public too early. Static decks miss the product feel entirely.
+ 
+What if this backend powered a **closed-loop video feedback platform — exclusively for founders and VCs?**
+ 
+- Founders post short-form product walkthroughs and UI demos
+- VCs and peers leave comments, replies, and tweet-style reactions  
+- Subscription engine lets you track founders you're watching
+- Channel dashboards become living founder profile pages
+The infrastructure already supports all of this.  
+The idea is just waiting for the right builder.
+ 
+> *Built as a backend learning project. The use case found itself.*
+ 
 ---
-
-## ⚙️ Run Locally
-
-```bash
-npm install
-npm run dev
-```
-
+ 
+## What It Does
+ 
+FoundrCast is a full-featured video platform backend — think YouTube's core engine, rebuilt from scratch with clean architecture and industry-standard practices.
+ 
+| Feature | Description |
+|---|---|
+| Auth & Sessions | JWT-based login with access + refresh token rotation |
+| Video Management | Upload, update, delete, and stream video content |
+| Social Layer | Comments, replies, likes, dislikes on videos |
+| Subscriptions | Subscribe/unsubscribe with channel feed aggregation |
+| Channel Dashboard | Per-user stats, video history, subscriber counts |
+| Tweet System | Short-form post support alongside video content |
+| Secure File Handling | Cloudinary integration for video and image storage |
+| Pagination | Aggregation pipelines with cursor-based pagination |
+ 
 ---
-
-
-## 🔐 Environment Variables
-
-Create a `.env` file in the root directory and add:
-
-```
-PORT=8000
-MONGODB_URI=your_mongodb_uri
-JWT_SECRET=your_secret_key
-ACCESS_TOKEN_SECRET=your_access_secret
-REFRESH_TOKEN_SECRET=your_refresh_secret
-
-CLOUDINARY_CLOUD_NAME=
-CLOUDINARY_API_KEY=
-CLOUDINARY_API_SECRET=
-```
-
----
-
-## 🗂 Project Structure
-
+ 
+## Architecture
+ 
 ```
 src/
- ├── routes/
- ├── controllers/
- ├── models/
- ├── middlewares/
- └── utils/
+ ├── routes/          → API endpoint definitions
+ ├── controllers/     → Business logic per resource
+ ├── models/          → Mongoose schemas (User, Video, Comment, Tweet...)
+ ├── middlewares/     → Auth guards, file upload handlers, error handling
+ └── utils/           → Cloudinary client, JWT helpers, async wrappers
 ```
-
+ 
+Full data model and system design →  
+[View Architecture on Eraser.io](https://app.eraser.io/workspace/YtPqZ1VogxGy1jzIDkzj)
+ 
 ---
-
-
-## 📚 Dependencies
-
+ 
+## API
+ 
+40+ RESTful endpoints documented and tested in Postman.
+ 
+[View Full API Documentation →](https://documenter.getpostman.com/view/41863970/2sBXirhnZn)
+ 
+Key endpoint groups:
+- `/api/v1/users` — auth, profile, avatar
+- `/api/v1/videos` — CRUD, streaming, visibility
+- `/api/v1/comments` — threaded comments per video
+- `/api/v1/likes` — likes on videos, comments, tweets
+- `/api/v1/subscriptions` — subscribe, feed, subscriber list
+- `/api/v1/dashboard` — channel stats and analytics
+- `/api/v1/tweets` — short-form posts
+---
+ 
+## Tech Stack
+ 
 | Package | Purpose |
-|--------|---------|
-| bcrypt | Password hashing |
-| cloudinary | Image & video storage |
-| cookie-parser | Cookie handling |
-| cors | Cross-origin requests |
-| dotenv | Environment variables |
-| express | Web framework |
-| jsonwebtoken | JWT authentication |
-| mongoose | MongoDB ORM |
-| mongoose-aggregate-paginate-v2 | Pagination |
-| multer | File uploads |
-| nodemon | Auto server restart |
-| prettier | Code formatting |
-
-
+|---|---|
+| Node.js + Express | Server and routing |
+| MongoDB + Mongoose | Database and ORM |
+| JWT + bcrypt | Authentication and password hashing |
+| Cloudinary | Video and image storage |
+| Multer | File upload handling |
+| cookie-parser | Cookie-based token management |
+| cors | Cross-origin request handling |
+| dotenv | Environment configuration |
+| mongoose-aggregate-paginate-v2 | Aggregation pagination |
+| nodemon | Development auto-restart |
+ 
 ---
-
-## 📜 License
-This project is licensed under the **ISC License**.
-
+ 
+## Run Locally
+ 
+**Prerequisites:** Node.js 18+, MongoDB URI, Cloudinary account
+ 
+```bash
+# Clone the repo
+git clone https://github.com/gautam-mttl/FoundrCast.git
+cd FoundrCast
+ 
+# Install dependencies
+npm install
+ 
+# Set up environment variables
+cp .env.example .env
+# Fill in your values (see below)
+ 
+# Start dev server
+npm run dev
+```
+ 
 ---
-
-## ⭐ Support and Acknowledgment
-For questions, suggestions, or bugs, please create an **Issue** in this repository.
-If you found this project helpful, consider giving it a **star**
-
+ 
+## Environment Variables
+ 
+Create a `.env` file in the root:
+ 
+```env
+PORT=8000
+MONGODB_URI=your_mongodb_connection_string
+ 
+ACCESS_TOKEN_SECRET=your_access_token_secret
+ACCESS_TOKEN_EXPIRY=1d
+ 
+REFRESH_TOKEN_SECRET=your_refresh_token_secret
+REFRESH_TOKEN_EXPIRY=10d
+ 
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
+```
+ 
 ---
-
+ 
+## License
+ 
+Licensed under the **ISC License** — use this however you want.
+ 
+---
+ 
+*If this repo helped you understand backend architecture, leave a star. If you want to build the founder-facing product on top of this — reach out.*
