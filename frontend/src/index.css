@@ -1,0 +1,109 @@
+/* FoundrCast Design Tokens & Global CSS Architecture */
+
+:root {
+  /* Surface & Background Colors */
+  --bg-dark-base: #090a0f;
+  --bg-dark-surface: #12151e;
+  --bg-dark-card: #181c28;
+  --bg-dark-hover: #222738;
+  --glass-bg: rgba(24, 28, 40, 0.75);
+  --glass-border: rgba(255, 255, 255, 0.08);
+
+  /* Primary Accent & Brand Colors */
+  --brand-primary: #6366f1;       /* Deep Indigo */
+  --brand-accent: #a855f7;        /* Vibrant Purple */
+  --brand-cyan: #06b6d4;          /* Electric Cyan */
+  --brand-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #06b6d4 100%);
+  --brand-gradient-hover: linear-gradient(135deg, #4f46e5 0%, #9333ea 50%, #0891b2 100%);
+
+  /* Text & Content Colors */
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --text-inverse: #0f172a;
+
+  /* State Colors */
+  --state-success: #10b981;
+  --state-error: #ef4444;
+  --state-warning: #f59e0b;
+  --state-info: #3b82f6;
+
+  /* Elevation Shadows & Glows */
+  --glow-primary: 0 0 20px rgba(99, 102, 241, 0.35);
+  --glow-accent: 0 0 20px rgba(168, 85, 247, 0.35);
+  --shadow-card: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+
+  /* Typography */
+  --font-heading: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* Reset & Box Sizing */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  width: 100%;
+  min-height: 100vh;
+  background-color: var(--bg-dark-base);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+/* Scrollbar Customization */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-dark-base);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--bg-dark-hover);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--brand-primary);
+}
+
+/* Utility Layout Classes */
+.glass-panel {
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+}
+
+.gradient-text {
+  background: var(--brand-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.pulse-glow {
+  box-shadow: var(--glow-primary);
+}
+
+/* Utility Components Basics */
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+input, textarea, select {
+  font-family: inherit;
+  color: var(--text-primary);
+}
