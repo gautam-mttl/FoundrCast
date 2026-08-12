@@ -1,37 +1,44 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useAuth } from './hooks/useAuth';
 import { useToast } from './hooks/useToast';
-import { getHealthcheck } from './api/healthcheck.api';
+import { Navbar } from './components/layout/Navbar';
+import { Sidebar } from './components/layout/Sidebar';
+import { HomePage } from './pages/HomePage';
+import { UserProfileCard } from './components/profile/UserProfileCard';
+import { AccountSettingsModal } from './components/profile/AccountSettingsModal';
 import { LoginPage } from './components/auth/LoginPage';
 import { RegisterPage } from './components/auth/RegisterPage';
-import { UserProfileCard } from './components/profile/UserProfileCard';
-import { Button } from './components/common/Button';
+import { Modal } from './components/common/Modal';
 import { Spinner } from './components/common/Spinner';
-import { Radio, Activity, CheckCircle2, XCircle } from 'lucide-react';
 
 export function App() {
-  const { isAuthenticated, loading: authLoading, checkAuth } = useAuth();
+  const { isAuthenticated, loading: authLoading } = useAuth();
   const { addToast } = useToast();
 
-  const [authMode, setAuthMode] = useState('login'); // 'login' | 'register'
-  const [healthStatus, setHealthStatus] = useState(null);
-  const [healthLoading, setHealthLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState('home'); // 'home' | 'profile' | 'explore' | etc.
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
-  const fetchHealth = async () => {
-    setHealthLoading(true);
-    try {
-      const response = await getHealthcheck();
-      setHealthStatus(response);
-    } catch (err) {
-      setHealthStatus(null);
-    } finally {
-      setHealthLoading(false);
+  // Modals state
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [authModalMode, setAuthModalMode] = useState(null); // 'login' | 'register' | null
+  const [selectedVideo, setSelectedVideo] = useState(null);
+
+  const handleSelectTab = (tabId) => {
+    setActiveTab(tabId);
+    if (tabId === 'home') {
+      setSearchQuery('');
+    } else if (tabId === 'explore') {
+      // Focus search
+    } else if (['subscriptions', 'playlists', 'history', 'liked', 'dashboard'].includes(tabId)) {
+      addToast(`${tabId.charAt(0).toUpperCase() + tabId.slice(1)} view planned in upcoming phase!`, 'info');
     }
   };
 
-  useEffect(() => {
-    fetchHealth();
-  }, []);
+  const handleVideoSelect = (video) => {
+    setSelectedVideo(video);
+    addToast(`Video "${video.title}" selected! Full Watch Page playback planned in Phase 4.`, 'info');
+  };
 
   if (authLoading) {
     return (
@@ -57,120 +64,78 @@ export function App() {
     <div
       style={{
         minHeight: '100vh',
-        background: 'radial-gradient(circle at top, #181c28 0%, #090a0f 100%)',
+        background: 'var(--bg-dark-base)',
         color: 'var(--text-primary)',
         display: 'flex',
         flexDirection: 'column',
       }}
     >
-      {/* Top Header Navigation */}
-      <header
-        className="glass-panel"
-        style={{
-          borderRadius: 0,
-          borderLeft: 'none',
-          borderRight: 'none',
-          borderTop: 'none',
-          padding: '1rem 2rem',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          position: 'sticky',
-          top: 0,
-          zIndex: 100,
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <div
-            style={{
-              width: '40px',
-              height: '40px',
-              borderRadius: '12px',
-              background: 'var(--brand-gradient)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: 'var(--glow-primary)',
-            }}
-          >
-            <Radio size={22} color="#ffffff" />
-          </div>
-          <span
-            className="gradient-text"
-            style={{
-              fontFamily: 'var(--font-heading)',
-              fontSize: '1.5rem',
-              fontWeight: 800,
-              letterSpacing: '-0.5px',
-            }}
-          >
-            FoundrCast
-          </span>
-        </div>
+      {/* Top Navbar */}
+      <Navbar
+        searchQuery={searchQuery}
+        onSearchChange={(q) => setSearchQuery(q)}
+        onSearchSubmit={(q) => setSearchQuery(q)}
+        onOpenSettings={() => setIsSettingsOpen(true)}
+        onOpenAuth={(mode) => setAuthModalMode(mode)}
+        onToggleSidebar={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+      />
 
-        {/* Healthcheck Indicator Pill */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '6px 12px',
-              borderRadius: '20px',
-              background: 'var(--bg-dark-surface)',
-              border: '1px solid var(--glass-border)',
-              fontSize: '12px',
-              fontWeight: 500,
-            }}
-          >
-            <Activity size={14} color="var(--brand-cyan)" />
-            {healthStatus ? (
-              <span style={{ color: 'var(--state-success)' }}>API Status 200 OK</span>
-            ) : (
-              <span style={{ color: 'var(--text-muted)' }}>Backend Offline / Checking</span>
-            )}
-          </div>
-        </div>
-      </header>
+      {/* Main Layout Container */}
+      <div style={{ display: 'flex', flex: 1, position: 'relative' }}>
+        {/* Responsive Sidebar */}
+        <Sidebar
+          activeTab={activeTab}
+          onSelectTab={handleSelectTab}
+          isCollapsed={isSidebarCollapsed}
+        />
 
-      {/* Main Content Area */}
-      <main
-        style={{
-          flex: 1,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '2.5rem 1.5rem',
-          maxWidth: '1200px',
-          width: '100%',
-          margin: '0 auto',
-        }}
+        {/* Content Body Area */}
+        <main
+          style={{
+            flex: 1,
+            padding: '1.75rem 2rem',
+            maxWidth: '1400px',
+            width: '100%',
+            margin: '0 auto',
+            minWidth: 0,
+          }}
+        >
+          {activeTab === 'profile' ? (
+            <div style={{ maxWidth: '680px', margin: '0 auto' }}>
+              <UserProfileCard />
+            </div>
+          ) : (
+            <HomePage
+              searchQuery={searchQuery}
+              onOpenAuth={(mode) => setAuthModalMode(mode)}
+              onVideoSelect={handleVideoSelect}
+            />
+          )}
+        </main>
+      </div>
+
+      {/* Account Settings Modal */}
+      <AccountSettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
+
+      {/* Auth Modal (Login / Register overlay for guests) */}
+      <Modal
+        isOpen={!!authModalMode}
+        onClose={() => setAuthModalMode(null)}
+        title={authModalMode === 'login' ? 'Sign In to FoundrCast' : 'Create Creator Channel'}
+        maxWidth="480px"
       >
-        {isAuthenticated ? (
-          /* Authenticated User Profile & Settings View */
-          <div style={{ maxWidth: '640px', width: '100%' }}>
-            <UserProfileCard />
-          </div>
+        {authModalMode === 'login' ? (
+          <LoginPage
+            onSwitchToRegister={() => setAuthModalMode('register')}
+            onSuccess={() => setAuthModalMode(null)}
+          />
         ) : (
-          /* Unauthenticated Guest Mode (Login / Register Tabs) */
-          <div
-            className="glass-panel"
-            style={{
-              maxWidth: '520px',
-              width: '100%',
-              padding: '2.25rem',
-              borderRadius: '20px',
-              boxShadow: '0 20px 50px rgba(0, 0, 0, 0.6)',
-            }}
-          >
-            {authMode === 'login' ? (
-              <LoginPage onSwitchToRegister={() => setAuthMode('register')} />
-            ) : (
-              <RegisterPage onSwitchToLogin={() => setAuthMode('login')} />
-            )}
-          </div>
+          <RegisterPage
+            onSwitchToLogin={() => setAuthModalMode('login')}
+            onSuccess={() => setAuthModalMode(null)}
+          />
         )}
-      </main>
+      </Modal>
     </div>
   );
 }

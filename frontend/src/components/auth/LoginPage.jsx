@@ -5,7 +5,7 @@ import { Input } from '../common/Input';
 import { Button } from '../common/Button';
 import { User, Lock, LogIn, AlertCircle } from 'lucide-react';
 
-export const LoginPage = ({ onSwitchToRegister }) => {
+export const LoginPage = ({ onSwitchToRegister, onSuccess }) => {
   const { login } = useAuth();
   const { addToast } = useToast();
 
@@ -39,6 +39,7 @@ export const LoginPage = ({ onSwitchToRegister }) => {
 
       await login(credentials);
       addToast('Logged in successfully!', 'success');
+      if (onSuccess) onSuccess();
     } catch (err) {
       const msg = err.message || 'Login failed. Please check your credentials.';
       setFormError(msg);
