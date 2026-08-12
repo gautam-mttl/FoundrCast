@@ -8,6 +8,7 @@ import { HomePage } from './pages/HomePage';
 import { WatchPage } from './pages/WatchPage';
 import { PlaylistsPage } from './pages/PlaylistsPage';
 import { PlaylistDetailPage } from './pages/PlaylistDetailPage';
+import { StudioPage } from './pages/StudioPage';
 import { UserProfileCard } from './components/profile/UserProfileCard';
 import { AccountSettingsModal } from './components/profile/AccountSettingsModal';
 import { LoginPage } from './components/auth/LoginPage';
@@ -47,9 +48,11 @@ export function App() {
       navigate('/');
     } else if (tabId === 'playlists') {
       navigate('/playlists');
+    } else if (tabId === 'dashboard' || tabId === 'studio') {
+      navigate('/studio');
     } else if (tabId === 'profile') {
       navigate('/profile');
-    } else if (['subscriptions', 'history', 'liked', 'dashboard'].includes(tabId)) {
+    } else if (['subscriptions', 'history', 'liked'].includes(tabId)) {
       addToast(`${tabId.charAt(0).toUpperCase() + tabId.slice(1)} view planned in upcoming phase!`, 'info');
     }
   };
@@ -57,6 +60,8 @@ export function App() {
   // Compute active sidebar tab from URL pathname
   const activeTab = location.pathname.startsWith('/profile')
     ? 'profile'
+    : location.pathname.startsWith('/studio')
+    ? 'dashboard'
     : location.pathname.startsWith('/playlist')
     ? 'playlists'
     : location.pathname.startsWith('/watch')
@@ -149,6 +154,12 @@ export function App() {
               path="/playlist/:playlistId"
               element={
                 <PlaylistDetailPage onOpenAuth={(mode) => setAuthModalMode(mode)} />
+              }
+            />
+            <Route
+              path="/studio"
+              element={
+                <StudioPage onOpenAuth={(mode) => setAuthModalMode(mode)} />
               }
             />
             <Route

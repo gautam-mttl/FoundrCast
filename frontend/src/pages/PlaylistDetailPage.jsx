@@ -97,7 +97,7 @@ export const PlaylistDetailPage = ({ onOpenAuth }) => {
       addToast(`Removed "${videoTitle}" from playlist`, 'info');
       setPlaylist((prev) => ({
         ...prev,
-        videos: prev.videos.filter((v) => (v._id || v) !== videoId),
+        videos: (prev?.videos || []).filter((v) => (v._id || v) !== videoId),
       }));
     } catch (err) {
       addToast(err.message || 'Failed to remove video', 'error');

@@ -8,7 +8,6 @@ import {
   VolumeX,
   Maximize,
   Minimize,
-  RotateCcw,
 } from 'lucide-react';
 
 export const VideoPlayer = ({ videoId, videoUrl, posterUrl, title = '' }) => {

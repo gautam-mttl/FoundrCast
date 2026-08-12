@@ -1,12 +1,13 @@
-import mongoose, {isValidObjectId} from "mongoose"
-import {Video} from "../models/video.model.js"
-import {User} from "../models/user.model.js"
-import {Comment} from "../models/comment.model.js"
+import mongoose, { isValidObjectId } from "mongoose"
+import { Video } from "../models/video.model.js"
+import { User } from "../models/user.model.js"
+import { Comment } from "../models/comment.model.js"
 import { Like } from "../models/like.model.js"
-import {ApiError} from "../utils/ApiError.js"
-import {ApiResponse} from "../utils/ApiResponse.js"
-import {asyncHandler} from "../utils/asyncHandler.js"
-import {uploadOnCloudinary, deleteFromCloudinary} from "../utils/cloudinary.js"
+import { ApiError } from "../utils/ApiError.js"
+import { ApiResponse } from "../utils/ApiResponse.js"
+import { asyncHandler } from "../utils/asyncHandler.js"
+import { uploadOnCloudinary, deleteFromCloudinary } from "../utils/cloudinary.js"
+import { Playlist } from "../models/playlist.model.js";
 
 
 const getAllVideos = asyncHandler(async (req, res) => {
@@ -16,10 +17,10 @@ const getAllVideos = asyncHandler(async (req, res) => {
     const pageNum = Number(page);                                                                                       //the query gives tring, so to convert into number
     const limitNum = Number(limit);
 
-// Build match stage                                                                          
+    // Build match stage                                                                          
     //no query, no userId ( /videos)                                                                                    //const matchStage = {}
     const matchStage = {                                                                                                //matchStage.isPublished = true
-        isPublished: true                                                                      
+        isPublished: true
     };
 
     // if userId in req.query ( /videos?userId=abc )-----> in match with isPublished, onwer: userId will also be passed
@@ -30,13 +31,13 @@ const getAllVideos = asyncHandler(async (req, res) => {
     // if query in req.query ( /videos?query=music )-----> in match with isPublished, the $or will also be passed
     if (query) {
         matchStage.$or = [                                                                                              //from isPublsihed documents, Match documents where ANY ONE of the conditions is true: title matches query or desc matches query
-        { title: { $regex: query, $options: "i" } },                                                                    //$regex Used to match strings based on a pattern instead of exact value.
-        { description: { $regex: query, $options: "i" } }                                                               //$options is Used to modify how $regex behaves. i-> case-insensitive search
+            { title: { $regex: query, $options: "i" } },                                                                    //$regex Used to match strings based on a pattern instead of exact value.
+            { description: { $regex: query, $options: "i" } }                                                               //$options is Used to modify how $regex behaves. i-> case-insensitive search
         ];
     }
 
 
-// Sort stage
+    // Sort stage
     const sortStage = {
         [sortBy]: sortType === "asc" ? 1 : -1
     };
@@ -45,45 +46,45 @@ const getAllVideos = asyncHandler(async (req, res) => {
         { $match: matchStage },
 
         {
-        $lookup: {
-            from: "users",
-            localField: "owner",
-            foreignField: "_id",
-            as: "channel"
-        }
-        },
-
-        {
-        $unwind: {
-            path: "$channel",
-            preserveNullAndEmptyArrays: true
-        }
-        },
-
-        {
-        $project: {
-            title: 1,
-            description: 1,
-            thumbnail: 1,
-            videoFile: 1,
-            duration: 1,
-            views: 1,
-            createdAt: 1,
-            isPublished: 1,
-            channel: {
-            _id: 1,
-            username: 1,
-            avatar: 1
+            $lookup: {
+                from: "users",
+                localField: "owner",
+                foreignField: "_id",
+                as: "channel"
             }
-        }
+        },
+
+        {
+            $unwind: {
+                path: "$channel",
+                preserveNullAndEmptyArrays: true
+            }
+        },
+
+        {
+            $project: {
+                title: 1,
+                description: 1,
+                thumbnail: 1,
+                videoFile: 1,
+                duration: 1,
+                views: 1,
+                createdAt: 1,
+                isPublished: 1,
+                channel: {
+                    _id: 1,
+                    username: 1,
+                    avatar: 1
+                }
+            }
         },
 
         { $sort: sortStage }
     ]);
 
     const videos = await Video.aggregatePaginate(aggregate, {
-        page : pageNum,
-        limit : limitNum
+        page: pageNum,
+        limit: limitNum
     });
 
     return res.status(200).json(
@@ -92,19 +93,19 @@ const getAllVideos = asyncHandler(async (req, res) => {
 })
 
 
-const publishAVideo = asyncHandler(async (req, res) => {    
+const publishAVideo = asyncHandler(async (req, res) => {
     //publish user video
-    const { title, description} = req.body
-    if(!title || !description){
+    const { title, description } = req.body
+    if (!title || !description) {
         throw new ApiError(400, "Title and Description are required");
     }
     //get video, upload to cloudinary, create video
 
     console.log(req.files);
-    const videoFileLocalPath = req.files?.videoFile[0]?.path; 
-    const thumbnailFileLocalPath = req.files?.thumbnail[0]?.path; 
+    const videoFileLocalPath = req.files?.videoFile[0]?.path;
+    const thumbnailFileLocalPath = req.files?.thumbnail[0]?.path;
 
-    if(!videoFileLocalPath || !thumbnailFileLocalPath){
+    if (!videoFileLocalPath || !thumbnailFileLocalPath) {
         throw new ApiError(400, "Video and thumbnail are required")
     }
 
@@ -133,13 +134,13 @@ const publishAVideo = asyncHandler(async (req, res) => {
             isPublished: true,
             owner: req.user._id                                                 //auth middleware in route
         });
-        
+
         const user = await User.findById(req.user._id).select("username avatar");
 
         return res
             .status(201)
-            .json(new ApiResponse(201, {newVideo, channel: user},  "Video published successfully"))
-    } 
+            .json(new ApiResponse(201, { newVideo, channel: user }, "Video published successfully"))
+    }
     catch (error) {
         console.log(error)
         throw new ApiError(500, "Something went wrong while publishing the video")
@@ -187,8 +188,9 @@ const getVideoById = asyncHandler(async (req, res) => {
                 title: 1,
                 description: 1,
                 thumbnail: 1,
-                videoUrl: 1,
+                videoUrl: "$videoFile",
                 duration: 1,
+                views: 1,
                 createdAt: 1,
                 isPublished: 1,
                 channel: {
@@ -205,7 +207,7 @@ const getVideoById = asyncHandler(async (req, res) => {
     }
 
     const videoDoc = video[0];
-        if (!videoDoc.isPublished && !videoDoc.channel._id.equals(req.user._id)) {
+    if (!videoDoc.isPublished && !videoDoc.channel._id.equals(req.user._id)) {
         throw new ApiError(403, "Video is private");
     }
 
@@ -222,7 +224,7 @@ const updateVideo = asyncHandler(async (req, res) => {
     const video = req.video;                                                            //req.video from middleware videoOwnership, video is instance of Video.findById
     //update video details like title, description, thumbnail
 
-    const {title, description} = req.body;
+    const { title, description } = req.body;
     const thumbnailLocalPath = req.file?.path;
 
     if (thumbnailLocalPath) {
@@ -231,16 +233,16 @@ const updateVideo = asyncHandler(async (req, res) => {
         if (!thumbnail) {
             throw new ApiError(500, 'Error while uploading thumbnail file');
         }
-        
+
         await deleteFromCloudinary(video.thumbnail_publicId);
 
         video.thumbnail = thumbnail.url;
         video.thumbnail_publicId = thumbnail.public_id;
     }
 
-    if(title !== undefined) { video.title = title }
-    if(description !== undefined){ video.description = description }
-    await video.save(); 
+    if (title !== undefined) { video.title = title }
+    if (description !== undefined) { video.description = description }
+    await video.save();
 
     return res
         .status(200)
@@ -251,14 +253,19 @@ const deleteVideo = asyncHandler(async (req, res) => {
     // delete video
     const video = req.video;                                                            //req.video from middleware videoOwnership, video is instance of Video.findById
 
+    await Playlist.updateMany(
+        { videos: video._id },
+        { $pull: { videos: video._id } }
+    );
+
     await deleteFromCloudinary(video.thumbnail_publicId)
     await deleteFromCloudinary(video.videoFile_publicId)
 
     await Video.findByIdAndDelete(video._id);
 
     return res.status(200).json(
-    new ApiResponse(200, {}, "Video deleted successfully")
-  );
+        new ApiResponse(200, {}, "Video deleted successfully")
+    );
 
 })
 
@@ -278,7 +285,7 @@ const togglePublishStatus = asyncHandler(async (req, res) => {
         throw new ApiError(404, "Video not found");
     }
     return res.status(200).json(
-      new ApiResponse(200, publishStatus, "Publish status toggled successfully")
+        new ApiResponse(200, publishStatus, "Publish status toggled successfully")
     );
 
 })
