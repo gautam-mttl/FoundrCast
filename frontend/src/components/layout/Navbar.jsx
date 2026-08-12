@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { Button } from '../common/Button';
 import { Radio, Search, X, User, LogOut, Settings, Menu } from 'lucide-react';
@@ -14,6 +14,11 @@ export const Navbar = ({
   const { user, isAuthenticated, logout } = useAuth();
   const [localQuery, setLocalQuery] = useState(searchQuery);
 
+  // Sync local query with prop changes (e.g. when cleared externally)
+  useEffect(() => {
+    setLocalQuery(searchQuery);
+  }, [searchQuery]);
+
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     if (onSearchSubmit) onSearchSubmit(localQuery);
@@ -21,6 +26,7 @@ export const Navbar = ({
 
   const handleClear = () => {
     setLocalQuery('');
+    if (onSearchChange) onSearchChange('');
     if (onSearchSubmit) onSearchSubmit('');
   };
 
@@ -60,7 +66,7 @@ export const Navbar = ({
         </button>
 
         <div
-          onClick={() => onSearchSubmit && onSearchSubmit('')}
+          onClick={handleClear}
           style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', cursor: 'pointer' }}
         >
           <div
@@ -119,8 +125,9 @@ export const Navbar = ({
           placeholder="Search FoundrCast videos, tech startups, AI..."
           value={localQuery}
           onChange={(e) => {
-            setLocalQuery(e.target.value);
-            if (onSearchChange) onSearchChange(e.target.value);
+            const val = e.target.value;
+            setLocalQuery(val);
+            if (onSearchChange) onSearchChange(val);
           }}
           style={{
             width: '100%',
