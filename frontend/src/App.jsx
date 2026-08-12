@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Routes, Route, useNavigate, useLocation, useSearchParams, Navigate } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
 import { useToast } from './hooks/useToast';
 import { Navbar } from './components/layout/Navbar';
 import { Sidebar } from './components/layout/Sidebar';
 import { HomePage } from './pages/HomePage';
+import { WatchPage } from './pages/WatchPage';
 import { UserProfileCard } from './components/profile/UserProfileCard';
 import { AccountSettingsModal } from './components/profile/AccountSettingsModal';
 import { LoginPage } from './components/auth/LoginPage';
@@ -12,33 +14,55 @@ import { Modal } from './components/common/Modal';
 import { Spinner } from './components/common/Spinner';
 
 export function App() {
-  const { isAuthenticated, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { isAuthenticated, loading: authLoading, logout } = useAuth();
   const { addToast } = useToast();
 
-  const [activeTab, setActiveTab] = useState('home'); // 'home' | 'profile' | 'explore' | etc.
-  const [searchQuery, setSearchQuery] = useState('');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-
-  // Modals state
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [authModalMode, setAuthModalMode] = useState(null); // 'login' | 'register' | null
-  const [selectedVideo, setSelectedVideo] = useState(null);
+
+  const searchQuery = searchParams.get('q') || '';
+
+  const handleSearchChange = (q) => {
+    if (q) {
+      setSearchParams({ q }, { replace: false });
+      if (location.pathname !== '/') {
+        navigate(`/?q=${encodeURIComponent(q)}`);
+      }
+    } else {
+      setSearchParams({}, { replace: true });
+      if (location.pathname !== '/') {
+        navigate('/');
+      }
+    }
+  };
 
   const handleSelectTab = (tabId) => {
-    setActiveTab(tabId);
     if (tabId === 'home') {
-      setSearchQuery('');
-    } else if (tabId === 'explore') {
-      // Focus search
+      navigate('/');
+    } else if (tabId === 'profile') {
+      navigate('/profile');
     } else if (['subscriptions', 'playlists', 'history', 'liked', 'dashboard'].includes(tabId)) {
       addToast(`${tabId.charAt(0).toUpperCase() + tabId.slice(1)} view planned in upcoming phase!`, 'info');
     }
   };
 
-  const handleVideoSelect = (video) => {
-    setSelectedVideo(video);
-    addToast(`Video "${video.title}" selected! Full Watch Page playback planned in Phase 4.`, 'info');
+  const handleLogout = async () => {
+    await logout();
+    navigate('/');
+    setAuthModalMode('login');
+    addToast('Logged out successfully', 'info');
   };
+
+  // Compute active sidebar tab from URL pathname
+  const activeTab = location.pathname.startsWith('/profile')
+    ? 'profile'
+    : location.pathname.startsWith('/watch')
+    ? 'home'
+    : 'home';
 
   if (authLoading) {
     return (
@@ -73,8 +97,8 @@ export function App() {
       {/* Top Navbar */}
       <Navbar
         searchQuery={searchQuery}
-        onSearchChange={(q) => setSearchQuery(q)}
-        onSearchSubmit={(q) => setSearchQuery(q)}
+        onSearchChange={handleSearchChange}
+        onSearchSubmit={handleSearchChange}
         onOpenSettings={() => setIsSettingsOpen(true)}
         onOpenAuth={(mode) => setAuthModalMode(mode)}
         onToggleSidebar={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
@@ -100,17 +124,36 @@ export function App() {
             minWidth: 0,
           }}
         >
-          {activeTab === 'profile' ? (
-            <div style={{ maxWidth: '680px', margin: '0 auto' }}>
-              <UserProfileCard />
-            </div>
-          ) : (
-            <HomePage
-              searchQuery={searchQuery}
-              onOpenAuth={(mode) => setAuthModalMode(mode)}
-              onVideoSelect={handleVideoSelect}
+          <Routes>
+            <Route
+              path="/"
+              element={
+                <HomePage
+                  searchQuery={searchQuery}
+                  onOpenAuth={(mode) => setAuthModalMode(mode)}
+                />
+              }
             />
-          )}
+            <Route
+              path="/watch/:videoId"
+              element={
+                <WatchPage onOpenAuth={(mode) => setAuthModalMode(mode)} />
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                isAuthenticated ? (
+                  <div style={{ maxWidth: '680px', margin: '0 auto' }}>
+                    <UserProfileCard />
+                  </div>
+                ) : (
+                  <Navigate to="/" replace />
+                )
+              }
+            />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
         </main>
       </div>
 

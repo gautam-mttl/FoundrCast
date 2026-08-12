@@ -1,20 +1,23 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { getAllVideosApi } from '../api/video.api';
 import { VideoGrid } from '../components/video/VideoGrid';
 import { Button } from '../components/common/Button';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../hooks/useToast';
 import { Filter, SlidersHorizontal, ChevronLeft, ChevronRight, Lock, LogIn } from 'lucide-react';
-
 import { useDebounce } from '../hooks/useDebounce';
 
 const CATEGORY_CHIPS = ['All', 'Startups', 'AI & Code', 'Founders', 'Tech News', 'Design'];
 
 export const HomePage = ({ searchQuery = '', onOpenAuth, onVideoSelect }) => {
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { isAuthenticated } = useAuth();
   const { addToast } = useToast();
 
-  const debouncedSearchQuery = useDebounce(searchQuery, 400);
+  const urlQuery = searchParams.get('q') || searchQuery;
+  const debouncedSearchQuery = useDebounce(urlQuery, 550);
 
   const [videos, setVideos] = useState([]);
   const [pagination, setPagination] = useState({
@@ -26,7 +29,7 @@ export const HomePage = ({ searchQuery = '', onOpenAuth, onVideoSelect }) => {
     hasPrevPage: false,
   });
 
-  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || 'All');
   const [sortBy, setSortBy] = useState('createdAt');
   const [sortType, setSortType] = useState('desc');
   const [loading, setLoading] = useState(false);
@@ -55,7 +58,6 @@ export const HomePage = ({ searchQuery = '', onOpenAuth, onVideoSelect }) => {
         }
 
         const response = await getAllVideosApi(params);
-        // Response envelope: { statusCode: 200, data: { docs, totalDocs, limit, page, totalPages, hasNextPage, hasPrevPage }, message, success }
         if (response?.data) {
           setVideos(response.data.docs || []);
           setPagination((prev) => ({
@@ -91,10 +93,26 @@ export const HomePage = ({ searchQuery = '', onOpenAuth, onVideoSelect }) => {
     }
   };
 
+  const handleCategorySelect = (chip) => {
+    setSelectedCategory(chip);
+    if (chip === 'All') {
+      searchParams.delete('category');
+    } else {
+      searchParams.set('category', chip);
+    }
+    setSearchParams(searchParams, { replace: true });
+  };
+
   const handleResetFilters = () => {
     setSelectedCategory('All');
     setSortBy('createdAt');
     setSortType('desc');
+    setSearchParams({}, { replace: true });
+  };
+
+  const handleVideoCardClick = (video) => {
+    if (onVideoSelect) onVideoSelect(video);
+    navigate(`/watch/${video._id}`);
   };
 
   return (
@@ -116,7 +134,7 @@ export const HomePage = ({ searchQuery = '', onOpenAuth, onVideoSelect }) => {
             return (
               <button
                 key={chip}
-                onClick={() => setSelectedCategory(chip)}
+                onClick={() => handleCategorySelect(chip)}
                 style={{
                   padding: '6px 14px',
                   borderRadius: '20px',
@@ -212,7 +230,7 @@ export const HomePage = ({ searchQuery = '', onOpenAuth, onVideoSelect }) => {
           <VideoGrid
             videos={videos}
             loading={loading}
-            onVideoSelect={onVideoSelect}
+            onVideoSelect={handleVideoCardClick}
             onReset={handleResetFilters}
           />
 
