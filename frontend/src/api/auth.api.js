@@ -94,3 +94,10 @@ export const updateUserCoverImageApi = async (formData, onProgress) => {
 export const changeCurrentPasswordApi = async (passwords) => {
   return axiosClient.post('/users/change-password', passwords);
 };
+
+/**
+ * Fetch current user's watch history.
+ */
+export const getWatchHistoryApi = async () => {
+  return axiosClient.get('/users/history');
+};

@@ -13,10 +13,12 @@ export const VideoCard = ({ video, onClick }) => {
     views = 0,
     createdAt,
     channel,
+    owner,
   } = video;
 
-  const channelName = channel?.username ? `@${channel.username}` : 'FoundrCast Creator';
-  const avatarUrl = channel?.avatar || '';
+  const channelObj = channel || (typeof owner === 'object' ? owner : null);
+  const channelName = channelObj?.username ? `@${channelObj.username}` : 'FoundrCast Creator';
+  const avatarUrl = channelObj?.avatar || '';
 
   return (
     <div
@@ -78,42 +80,46 @@ export const VideoCard = ({ video, onClick }) => {
         )}
 
         {/* Duration Badge */}
-        <div
-          style={{
-            position: 'absolute',
-            bottom: '8px',
-            right: '8px',
-            padding: '3px 8px',
-            borderRadius: '6px',
-            background: 'rgba(9, 10, 15, 0.85)',
-            backdropFilter: 'blur(4px)',
-            color: 'var(--text-primary)',
-            fontSize: '11px',
-            fontWeight: 600,
-            letterSpacing: '0.5px',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-          }}
-        >
-          {formatDuration(duration)}
-        </div>
+        {duration > 0 && (
+          <div
+            style={{
+              position: 'absolute',
+              bottom: '8px',
+              right: '8px',
+              padding: '3px 8px',
+              borderRadius: '6px',
+              background: 'rgba(0, 0, 0, 0.85)',
+              color: '#ffffff',
+              fontSize: '11px',
+              fontWeight: 600,
+              backdropFilter: 'blur(4px)',
+            }}
+          >
+            {formatDuration(duration)}
+          </div>
+        )}
       </div>
 
-      {/* Video Details Row */}
-      <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', padding: '0 2px' }}>
+      {/* Video Info Container */}
+      <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
         {/* Creator Avatar */}
         <div
           style={{
-            width: '38px',
-            height: '38px',
+            width: '36px',
+            height: '36px',
             borderRadius: '50%',
             overflow: 'hidden',
+            background: 'var(--brand-gradient)',
+            border: '1px solid var(--glass-border)',
             flexShrink: 0,
-            background: 'var(--bg-dark-card)',
-            border: '1.5px solid var(--brand-primary)',
           }}
         >
           {avatarUrl ? (
-            <img src={avatarUrl} alt={channelName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            <img
+              src={avatarUrl}
+              alt={channelName}
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            />
           ) : (
             <div
               style={{
@@ -122,8 +128,7 @@ export const VideoCard = ({ video, onClick }) => {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                background: 'var(--brand-gradient)',
-                color: '#fff',
+                color: '#ffffff',
               }}
             >
               <User size={18} />
@@ -131,36 +136,34 @@ export const VideoCard = ({ video, onClick }) => {
           )}
         </div>
 
-        {/* Title & Metadata */}
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <h4
+        {/* Text Details */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', minWidth: 0, flex: 1 }}>
+          <h3
             style={{
               fontSize: '14px',
-              fontWeight: 600,
+              fontWeight: 700,
               color: 'var(--text-primary)',
               lineHeight: 1.35,
               display: '-webkit-box',
               WebkitLineClamp: 2,
               WebkitBoxOrient: 'vertical',
               overflow: 'hidden',
-              marginBottom: '4px',
             }}
           >
             {title}
-          </h4>
+          </h3>
 
-          <div style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 500 }}>
+          <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 500 }}>
             {channelName}
-          </div>
+          </span>
 
           <div
             style={{
-              fontSize: '12px',
-              color: 'var(--text-muted)',
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
-              marginTop: '2px',
+              fontSize: '11.5px',
+              color: 'var(--text-muted)',
             }}
           >
             <span>{formatViews(views)}</span>

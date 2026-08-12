@@ -5,6 +5,10 @@ import { useToast } from './hooks/useToast';
 import { Navbar } from './components/layout/Navbar';
 import { Sidebar } from './components/layout/Sidebar';
 import { HomePage } from './pages/HomePage';
+import { ExplorePage } from './pages/ExplorePage';
+import { SubscriptionsPage } from './pages/SubscriptionsPage';
+import { HistoryPage } from './pages/HistoryPage';
+import { LikedVideosPage } from './pages/LikedVideosPage';
 import { WatchPage } from './pages/WatchPage';
 import { PlaylistsPage } from './pages/PlaylistsPage';
 import { PlaylistDetailPage } from './pages/PlaylistDetailPage';
@@ -20,7 +24,7 @@ export function App() {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { isAuthenticated, loading: authLoading, logout } = useAuth();
+  const { isAuthenticated, loading: authLoading } = useAuth();
   const { addToast } = useToast();
 
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -30,30 +34,42 @@ export function App() {
   const searchQuery = searchParams.get('q') || '';
 
   const handleSearchChange = (q) => {
+    // Continuous typing on home feed updates URL without pushing history entries
+    if (location.pathname === '/') {
+      if (q) {
+        setSearchParams({ q }, { replace: true });
+      } else {
+        setSearchParams({}, { replace: true });
+      }
+    }
+  };
+
+  const handleSearchSubmit = (q) => {
+    // Explicit search submission navigates to Home feed with search query
     if (q) {
-      setSearchParams({ q }, { replace: false });
-      if (location.pathname !== '/') {
-        navigate(`/?q=${encodeURIComponent(q)}`);
-      }
-    } else {
+      navigate(`/?q=${encodeURIComponent(q)}`);
+    } else if (location.pathname === '/') {
       setSearchParams({}, { replace: true });
-      if (location.pathname !== '/') {
-        navigate('/');
-      }
     }
   };
 
   const handleSelectTab = (tabId) => {
     if (tabId === 'home') {
       navigate('/');
+    } else if (tabId === 'explore') {
+      navigate('/explore');
+    } else if (tabId === 'subscriptions') {
+      navigate('/subscriptions');
     } else if (tabId === 'playlists') {
       navigate('/playlists');
+    } else if (tabId === 'history') {
+      navigate('/history');
+    } else if (tabId === 'liked') {
+      navigate('/liked');
     } else if (tabId === 'dashboard' || tabId === 'studio') {
       navigate('/studio');
     } else if (tabId === 'profile') {
       navigate('/profile');
-    } else if (['subscriptions', 'history', 'liked'].includes(tabId)) {
-      addToast(`${tabId.charAt(0).toUpperCase() + tabId.slice(1)} view planned in upcoming phase!`, 'info');
     }
   };
 
@@ -62,10 +78,16 @@ export function App() {
     ? 'profile'
     : location.pathname.startsWith('/studio')
     ? 'dashboard'
+    : location.pathname.startsWith('/explore')
+    ? 'explore'
+    : location.pathname.startsWith('/subscriptions')
+    ? 'subscriptions'
+    : location.pathname.startsWith('/history')
+    ? 'history'
+    : location.pathname.startsWith('/liked')
+    ? 'liked'
     : location.pathname.startsWith('/playlist')
     ? 'playlists'
-    : location.pathname.startsWith('/watch')
-    ? 'home'
     : 'home';
 
   if (authLoading) {
@@ -102,7 +124,7 @@ export function App() {
       <Navbar
         searchQuery={searchQuery}
         onSearchChange={handleSearchChange}
-        onSearchSubmit={handleSearchChange}
+        onSearchSubmit={handleSearchSubmit}
         onOpenSettings={() => setIsSettingsOpen(true)}
         onOpenAuth={(mode) => setAuthModalMode(mode)}
         onToggleSidebar={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
@@ -136,6 +158,30 @@ export function App() {
                   searchQuery={searchQuery}
                   onOpenAuth={(mode) => setAuthModalMode(mode)}
                 />
+              }
+            />
+            <Route
+              path="/explore"
+              element={
+                <ExplorePage onOpenAuth={(mode) => setAuthModalMode(mode)} />
+              }
+            />
+            <Route
+              path="/subscriptions"
+              element={
+                <SubscriptionsPage onOpenAuth={(mode) => setAuthModalMode(mode)} />
+              }
+            />
+            <Route
+              path="/history"
+              element={
+                <HistoryPage onOpenAuth={(mode) => setAuthModalMode(mode)} />
+              }
+            />
+            <Route
+              path="/liked"
+              element={
+                <LikedVideosPage onOpenAuth={(mode) => setAuthModalMode(mode)} />
               }
             />
             <Route
