@@ -1,33 +1,144 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { formatViews, formatTimeAgo } from '../../utils/formatters';
+import { useAuth } from '../../hooks/useAuth';
 import { useToast } from '../../hooks/useToast';
+import { toggleVideoLikeApi, getLikedVideosApi } from '../../api/like.api';
+import {
+  toggleSubscriptionApi,
+  getChannelSubscribersApi,
+  getSubscribedChannelsApi,
+} from '../../api/subscription.api';
 import { Button } from '../common/Button';
-import { Heart, Share2, User, ChevronDown, ChevronUp, Check } from 'lucide-react';
+import { Heart, Share2, User, ChevronDown, ChevronUp, Bell, BellOff } from 'lucide-react';
 
-export const VideoDetails = ({ video, onToggleLike, onToggleSubscribe }) => {
+export const VideoDetails = ({ video, onOpenAuth }) => {
+  const { user: currentUser, isAuthenticated } = useAuth();
   const { addToast } = useToast();
+
   const [isExpanded, setIsExpanded] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(video?.totalLikes || 0);
 
-  if (!video) return null;
+  const [isSubscribed, setIsSubscribed] = useState(false);
+  const [subscriberCount, setSubscriberCount] = useState(0);
+  const [loadingSub, setLoadingSub] = useState(false);
 
-  const {
-    _id,
-    title = '',
-    description = '',
-    views = 0,
-    createdAt,
-    channel,
-  } = video;
-
+  const videoId = video?._id;
+  const channel = video?.channel;
+  const channelId = channel?._id;
   const channelName = channel?.username ? `@${channel.username}` : 'FoundrCast Creator';
   const avatarUrl = channel?.avatar || '';
 
-  const handleLike = () => {
-    setIsLiked(!isLiked);
-    setLikeCount((prev) => (isLiked ? prev - 1 : prev + 1));
-    if (onToggleLike) onToggleLike(_id);
+  const isSelfChannel = currentUser?._id && channelId && currentUser._id === channelId;
+
+  // Sync likeCount with video prop
+  useEffect(() => {
+    if (video?.totalLikes !== undefined) {
+      setLikeCount(video.totalLikes);
+    }
+  }, [video?.totalLikes]);
+
+  // Check initial video like state and subscriber count
+  useEffect(() => {
+    let isMounted = true;
+
+    const checkInitialStates = async () => {
+      // Check subscriber count
+      if (channelId) {
+        try {
+          const subRes = await getChannelSubscribersApi(channelId);
+          if (subRes?.data?.totalSubscribers !== undefined && isMounted) {
+            setSubscriberCount(subRes.data.totalSubscribers);
+          }
+        } catch (err) {
+          // ignore error if unauthorized or non-existent
+        }
+      }
+
+      // If user authenticated, check if video is liked and channel is subscribed
+      if (isAuthenticated && currentUser?._id) {
+        try {
+          const likedRes = await getLikedVideosApi();
+          if (likedRes?.data && Array.isArray(likedRes.data) && isMounted) {
+            const hasLiked = likedRes.data.some(
+              (item) => item.video?._id === videoId || item.video === videoId
+            );
+            setIsLiked(hasLiked);
+          }
+        } catch (err) {}
+
+        if (channelId && !isSelfChannel) {
+          try {
+            const mySubsRes = await getSubscribedChannelsApi(currentUser._id);
+            if (mySubsRes?.data && Array.isArray(mySubsRes.data) && isMounted) {
+              const hasSubbed = mySubsRes.data.some(
+                (item) => item.channel?._id === channelId || item.channel === channelId
+              );
+              setIsSubscribed(hasSubbed);
+            }
+          } catch (err) {}
+        }
+      }
+    };
+
+    checkInitialStates();
+    return () => {
+      isMounted = false;
+    };
+  }, [videoId, channelId, isAuthenticated, currentUser?._id, isSelfChannel]);
+
+  // Handle Video Like Toggle
+  const handleLike = async () => {
+    if (!isAuthenticated) {
+      if (onOpenAuth) onOpenAuth('login');
+      return;
+    }
+
+    const prevLiked = isLiked;
+    const prevCount = likeCount;
+
+    setIsLiked(!prevLiked);
+    setLikeCount(prevLiked ? prevCount - 1 : prevCount + 1);
+
+    try {
+      const response = await toggleVideoLikeApi(videoId);
+      addToast(response?.message || (prevLiked ? 'Video unliked' : 'Video liked!'), 'success');
+    } catch (err) {
+      setIsLiked(prevLiked);
+      setLikeCount(prevCount);
+      addToast(err.message || 'Failed to toggle like', 'error');
+    }
+  };
+
+  // Handle Subscription Toggle
+  const handleToggleSubscription = async () => {
+    if (!isAuthenticated) {
+      if (onOpenAuth) onOpenAuth('login');
+      return;
+    }
+
+    if (isSelfChannel) {
+      addToast('You cannot subscribe to your own channel', 'warning');
+      return;
+    }
+
+    const prevSubbed = isSubscribed;
+    const prevCount = subscriberCount;
+
+    setIsSubscribed(!prevSubbed);
+    setSubscriberCount(prevSubbed ? Math.max(0, prevCount - 1) : prevCount + 1);
+    setLoadingSub(true);
+
+    try {
+      const response = await toggleSubscriptionApi(channelId);
+      addToast(response?.message || (prevSubbed ? 'Unsubscribed' : 'Subscribed!'), 'success');
+    } catch (err) {
+      setIsSubscribed(prevSubbed);
+      setSubscriberCount(prevCount);
+      addToast(err.message || 'Subscription toggle failed', 'error');
+    } finally {
+      setLoadingSub(false);
+    }
   };
 
   const handleShare = () => {
@@ -48,7 +159,7 @@ export const VideoDetails = ({ video, onToggleLike, onToggleSubscribe }) => {
           lineHeight: 1.3,
         }}
       >
-        {title}
+        {video?.title}
       </h1>
 
       {/* Creator Channel Row & Action Toolbar */}
@@ -63,8 +174,8 @@ export const VideoDetails = ({ video, onToggleLike, onToggleSubscribe }) => {
           borderBottom: '1px solid var(--glass-border)',
         }}
       >
-        {/* Creator Info */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        {/* Creator Info & Subscribe Button */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
           <div
             style={{
               width: '44px',
@@ -98,11 +209,38 @@ export const VideoDetails = ({ video, onToggleLike, onToggleSubscribe }) => {
             <h3 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>
               {channelName}
             </h3>
-            <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Verified Creator</span>
+            <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+              {subscriberCount} {subscriberCount === 1 ? 'subscriber' : 'subscribers'}
+            </span>
           </div>
+
+          {/* Subscribe Action Button */}
+          {!isSelfChannel && (
+            <Button
+              variant={isSubscribed ? 'secondary' : 'primary'}
+              onClick={handleToggleSubscription}
+              isLoading={loadingSub}
+              style={{
+                padding: '6px 16px',
+                fontSize: '13px',
+                borderRadius: '20px',
+                marginLeft: '6px',
+              }}
+            >
+              {isSubscribed ? (
+                <>
+                  <BellOff size={15} /> Subscribed
+                </>
+              ) : (
+                <>
+                  <Bell size={15} /> Subscribe
+                </>
+              )}
+            </Button>
+          )}
         </div>
 
-        {/* Action Toolbar */}
+        {/* Action Toolbar (Like / Share) */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           {/* Like Button */}
           <Button
@@ -137,9 +275,9 @@ export const VideoDetails = ({ video, onToggleLike, onToggleSubscribe }) => {
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <div style={{ display: 'flex', gap: '12px', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>
-          <span>{formatViews(views)}</span>
+          <span>{formatViews(video?.views)}</span>
           <span>•</span>
-          <span>{formatTimeAgo(createdAt)}</span>
+          <span>{formatTimeAgo(video?.createdAt)}</span>
         </div>
 
         <p
@@ -155,10 +293,10 @@ export const VideoDetails = ({ video, onToggleLike, onToggleSubscribe }) => {
             overflow: isExpanded ? 'visible' : 'hidden',
           }}
         >
-          {description || 'No description provided for this video.'}
+          {video?.description || 'No description provided for this video.'}
         </p>
 
-        {description.length > 120 && (
+        {video?.description && video.description.length > 120 && (
           <div
             style={{
               display: 'flex',

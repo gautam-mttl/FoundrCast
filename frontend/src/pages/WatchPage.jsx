@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { getVideoByIdApi } from '../api/video.api';
 import { VideoPlayer } from '../components/video/VideoPlayer';
 import { VideoDetails } from '../components/video/VideoDetails';
+import { CommentSection } from '../components/comment/CommentSection';
 import { RelatedVideosList } from '../components/video/RelatedVideosList';
 import { Button } from '../components/common/Button';
 import { Spinner } from '../components/common/Spinner';
@@ -159,7 +160,7 @@ export const WatchPage = ({ onOpenAuth }) => {
           alignItems: 'flex-start',
         }}
       >
-        {/* Left Column: Video Player & Details */}
+        {/* Left Column: Video Player, Details & Comment Section */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', minWidth: 0 }}>
           <VideoPlayer
             videoId={video._id}
@@ -167,7 +168,8 @@ export const WatchPage = ({ onOpenAuth }) => {
             posterUrl={video.thumbnail}
             title={video.title}
           />
-          <VideoDetails video={video} />
+          <VideoDetails video={video} onOpenAuth={onOpenAuth} />
+          <CommentSection videoId={video._id} onOpenAuth={onOpenAuth} />
         </div>
 
         {/* Right Column: Related Videos List */}
