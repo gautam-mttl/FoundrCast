@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Routes, Route, useNavigate, useLocation, useSearchParams, Navigate } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
 import { useToast } from './hooks/useToast';
@@ -6,6 +6,8 @@ import { Navbar } from './components/layout/Navbar';
 import { Sidebar } from './components/layout/Sidebar';
 import { HomePage } from './pages/HomePage';
 import { WatchPage } from './pages/WatchPage';
+import { PlaylistsPage } from './pages/PlaylistsPage';
+import { PlaylistDetailPage } from './pages/PlaylistDetailPage';
 import { UserProfileCard } from './components/profile/UserProfileCard';
 import { AccountSettingsModal } from './components/profile/AccountSettingsModal';
 import { LoginPage } from './components/auth/LoginPage';
@@ -43,23 +45,20 @@ export function App() {
   const handleSelectTab = (tabId) => {
     if (tabId === 'home') {
       navigate('/');
+    } else if (tabId === 'playlists') {
+      navigate('/playlists');
     } else if (tabId === 'profile') {
       navigate('/profile');
-    } else if (['subscriptions', 'playlists', 'history', 'liked', 'dashboard'].includes(tabId)) {
+    } else if (['subscriptions', 'history', 'liked', 'dashboard'].includes(tabId)) {
       addToast(`${tabId.charAt(0).toUpperCase() + tabId.slice(1)} view planned in upcoming phase!`, 'info');
     }
-  };
-
-  const handleLogout = async () => {
-    await logout();
-    navigate('/');
-    setAuthModalMode('login');
-    addToast('Logged out successfully', 'info');
   };
 
   // Compute active sidebar tab from URL pathname
   const activeTab = location.pathname.startsWith('/profile')
     ? 'profile'
+    : location.pathname.startsWith('/playlist')
+    ? 'playlists'
     : location.pathname.startsWith('/watch')
     ? 'home'
     : 'home';
@@ -138,6 +137,18 @@ export function App() {
               path="/watch/:videoId"
               element={
                 <WatchPage onOpenAuth={(mode) => setAuthModalMode(mode)} />
+              }
+            />
+            <Route
+              path="/playlists"
+              element={
+                <PlaylistsPage onOpenAuth={(mode) => setAuthModalMode(mode)} />
+              }
+            />
+            <Route
+              path="/playlist/:playlistId"
+              element={
+                <PlaylistDetailPage onOpenAuth={(mode) => setAuthModalMode(mode)} />
               }
             />
             <Route

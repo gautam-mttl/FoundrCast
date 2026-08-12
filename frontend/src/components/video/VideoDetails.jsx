@@ -8,8 +8,9 @@ import {
   getChannelSubscribersApi,
   getSubscribedChannelsApi,
 } from '../../api/subscription.api';
+import { AddToPlaylistModal } from '../playlist/AddToPlaylistModal';
 import { Button } from '../common/Button';
-import { Heart, Share2, User, ChevronDown, ChevronUp, Bell, BellOff } from 'lucide-react';
+import { Heart, Share2, User, ChevronDown, ChevronUp, Bell, BellOff, FolderPlus } from 'lucide-react';
 
 export const VideoDetails = ({ video, onOpenAuth }) => {
   const { user: currentUser, isAuthenticated } = useAuth();
@@ -22,6 +23,9 @@ export const VideoDetails = ({ video, onOpenAuth }) => {
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [subscriberCount, setSubscriberCount] = useState(0);
   const [loadingSub, setLoadingSub] = useState(false);
+
+  // Add to Playlist modal state
+  const [isPlaylistModalOpen, setIsPlaylistModalOpen] = useState(false);
 
   const videoId = video?._id;
   const channel = video?.channel;
@@ -43,19 +47,15 @@ export const VideoDetails = ({ video, onOpenAuth }) => {
     let isMounted = true;
 
     const checkInitialStates = async () => {
-      // Check subscriber count
       if (channelId) {
         try {
           const subRes = await getChannelSubscribersApi(channelId);
           if (subRes?.data?.totalSubscribers !== undefined && isMounted) {
             setSubscriberCount(subRes.data.totalSubscribers);
           }
-        } catch (err) {
-          // ignore error if unauthorized or non-existent
-        }
+        } catch (err) {}
       }
 
-      // If user authenticated, check if video is liked and channel is subscribed
       if (isAuthenticated && currentUser?._id) {
         try {
           const likedRes = await getLikedVideosApi();
@@ -139,6 +139,14 @@ export const VideoDetails = ({ video, onOpenAuth }) => {
     } finally {
       setLoadingSub(false);
     }
+  };
+
+  const handleOpenPlaylistModal = () => {
+    if (!isAuthenticated) {
+      if (onOpenAuth) onOpenAuth('login');
+      return;
+    }
+    setIsPlaylistModalOpen(true);
   };
 
   const handleShare = () => {
@@ -240,7 +248,7 @@ export const VideoDetails = ({ video, onOpenAuth }) => {
           )}
         </div>
 
-        {/* Action Toolbar (Like / Share) */}
+        {/* Action Toolbar (Like / Save to Playlist / Share) */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           {/* Like Button */}
           <Button
@@ -250,6 +258,15 @@ export const VideoDetails = ({ video, onOpenAuth }) => {
           >
             <Heart size={16} fill={isLiked ? '#fff' : 'none'} color={isLiked ? '#fff' : 'var(--text-primary)'} />
             <span>{likeCount}</span>
+          </Button>
+
+          {/* Save to Playlist Button */}
+          <Button
+            variant="secondary"
+            onClick={handleOpenPlaylistModal}
+            style={{ padding: '8px 16px', fontSize: '13px', borderRadius: '20px' }}
+          >
+            <FolderPlus size={16} /> Save
           </Button>
 
           {/* Share Button */}
@@ -320,6 +337,13 @@ export const VideoDetails = ({ video, onOpenAuth }) => {
           </div>
         )}
       </div>
+
+      {/* Add To Playlist Modal */}
+      <AddToPlaylistModal
+        isOpen={isPlaylistModalOpen}
+        onClose={() => setIsPlaylistModalOpen(false)}
+        videoId={videoId}
+      />
     </div>
   );
 };
