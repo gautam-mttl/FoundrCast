@@ -12,6 +12,7 @@ import { LikedVideosPage } from './pages/LikedVideosPage';
 import { WatchPage } from './pages/WatchPage';
 import { PlaylistsPage } from './pages/PlaylistsPage';
 import { PlaylistDetailPage } from './pages/PlaylistDetailPage';
+import { ChannelPage } from './pages/ChannelPage';
 import { StudioPage } from './pages/StudioPage';
 import { UserProfileCard } from './components/profile/UserProfileCard';
 import { AccountSettingsModal } from './components/profile/AccountSettingsModal';
@@ -200,6 +201,12 @@ export function App() {
               path="/playlist/:playlistId"
               element={
                 <PlaylistDetailPage onOpenAuth={(mode) => setAuthModalMode(mode)} />
+              }
+            />
+            <Route
+              path="/channel/:username"
+              element={
+                <ChannelPage onOpenAuth={(mode) => setAuthModalMode(mode)} />
               }
             />
             <Route

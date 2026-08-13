@@ -1,3 +1,5 @@
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '../../hooks/useAuth';
 import { normalizeMediaUrl } from '../../utils/formatters';
 import { Button } from '../common/Button';
 import { Radio, Search, X, User, LogOut, Settings, Menu } from 'lucide-react';

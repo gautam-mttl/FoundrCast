@@ -101,3 +101,11 @@ export const changeCurrentPasswordApi = async (passwords) => {
 export const getWatchHistoryApi = async () => {
   return axiosClient.get('/users/history');
 };
+
+/**
+ * Fetch channel profile of a user by username.
+ * @param {string} username
+ */
+export const getChannelProfileApi = async (username) => {
+  return axiosClient.get(`/users/c/${username}`);
+};

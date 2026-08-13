@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { formatViews, formatTimeAgo, normalizeMediaUrl } from '../../utils/formatters';
 import { useAuth } from '../../hooks/useAuth';
 import { useToast } from '../../hooks/useToast';
@@ -13,6 +14,7 @@ import { Button } from '../common/Button';
 import { Heart, Share2, User, ChevronDown, ChevronUp, Bell, BellOff, FolderPlus } from 'lucide-react';
 
 export const VideoDetails = ({ video, onOpenAuth }) => {
+  const navigate = useNavigate();
   const { user: currentUser, isAuthenticated } = useAuth();
   const { addToast } = useToast();
 
@@ -30,10 +32,17 @@ export const VideoDetails = ({ video, onOpenAuth }) => {
   const videoId = video?._id;
   const channel = video?.channel;
   const channelId = channel?._id;
-  const channelName = channel?.username ? `@${channel.username}` : 'FoundrCast Creator';
+  const rawUsername = channel?.username || '';
+  const channelName = rawUsername ? `@${rawUsername}` : 'FoundrCast Creator';
   const avatarUrl = normalizeMediaUrl(channel?.avatar || '');
 
   const isSelfChannel = currentUser?._id && channelId && currentUser._id === channelId;
+
+  const handleNavigateChannel = () => {
+    if (rawUsername) {
+      navigate(`/channel/${rawUsername}`);
+    }
+  };
 
   // Sync likeCount with video prop
   useEffect(() => {
@@ -185,41 +194,46 @@ export const VideoDetails = ({ video, onOpenAuth }) => {
         {/* Creator Info & Subscribe Button */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
           <div
-            style={{
-              width: '44px',
-              height: '44px',
-              borderRadius: '50%',
-              overflow: 'hidden',
-              background: 'var(--brand-gradient)',
-              border: '2px solid var(--brand-primary)',
-              flexShrink: 0,
-            }}
+            onClick={handleNavigateChannel}
+            style={{ display: 'flex', alignItems: 'center', gap: '14px', cursor: rawUsername ? 'pointer' : 'default' }}
           >
-            {avatarUrl ? (
-              <img src={avatarUrl} alt={channelName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            ) : (
-              <div
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: '#fff',
-                }}
-              >
-                <User size={22} />
-              </div>
-            )}
-          </div>
+            <div
+              style={{
+                width: '44px',
+                height: '44px',
+                borderRadius: '50%',
+                overflow: 'hidden',
+                background: 'var(--brand-gradient)',
+                border: '2px solid var(--brand-primary)',
+                flexShrink: 0,
+              }}
+            >
+              {avatarUrl ? (
+                <img src={avatarUrl} alt={channelName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              ) : (
+                <div
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#fff',
+                  }}
+                >
+                  <User size={22} />
+                </div>
+              )}
+            </div>
 
-          <div>
-            <h3 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>
-              {channelName}
-            </h3>
-            <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-              {subscriberCount} {subscriberCount === 1 ? 'subscriber' : 'subscribers'}
-            </span>
+            <div>
+              <h3 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                {channelName}
+              </h3>
+              <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                {subscriberCount} {subscriberCount === 1 ? 'subscriber' : 'subscribers'}
+              </span>
+            </div>
           </div>
 
           {/* Subscribe Action Button */}
