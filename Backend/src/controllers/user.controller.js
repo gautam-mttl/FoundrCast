@@ -1,17 +1,20 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
-import {ApiError} from "../utils/ApiError.js";
-import {User} from "../models/user.model.js";
-import {uploadOnCloudinary, deleteFromCloudinary} from "../utils/cloudinary.js";
+import { ApiError } from "../utils/ApiError.js";
+import { User } from "../models/user.model.js";
+import { uploadOnCloudinary, deleteFromCloudinary } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import jwt from "jsonwebtoken"
 import mongoose from "mongoose";
 
+const isProduction = process.env.NODE_ENV === "production";
+
 const CookieOptions = {
-  httpOnly: true,                                   
-  secure: true,                                     //can only be changed from server
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "lax",
 };
 
-const generateAccessAndRefereshTokens = async(userId) =>{
+const generateAccessAndRefereshTokens = async (userId) => {
     try {
         const user = await User.findById(userId)
         const accessToken = user.generateAccessToken()
@@ -20,7 +23,7 @@ const generateAccessAndRefereshTokens = async(userId) =>{
         user.refreshToken = refreshToken
         await user.save({ validateBeforeSave: false })                                      //save is mongoDB method, also when we save then jo required fields woh bhi check hote hai ki if value is given or not so to avoid this Validate ko false krdo                                      
 
-        return {accessToken, refreshToken}
+        return { accessToken, refreshToken }
 
 
     } catch (error) {
@@ -40,11 +43,11 @@ const registerUser = asyncHandler(async (req, res) => {
     // (response aya ya nhi, and if aya then)check for user creation
     // return response
 
-    const {fullName, email, username, password}= req.body;                         //form ya json se data .body me aata h, but url se data ke liye 
+    const { fullName, email, username, password } = req.body;                         //form ya json se data .body me aata h, but url se data ke liye 
 
     console.log(req.body);                                 //JUST TO STUDY the incoming request body  
 
-    
+
     if (
         [fullName, email, username, password].some((field) => field?.trim() === "")                     //separate if for all fields krke bhi check kr skte h
     ) {
@@ -52,14 +55,14 @@ const registerUser = asyncHandler(async (req, res) => {
     }
 
     const existingUser = await User.findOne({                                  //find first entry that matches the criteria in user Schema
-        $or: [{ username },{ email }]                                   //dollar sign indicate krte h ki mongodb ka operator use kr rhe h
-    
+        $or: [{ username }, { email }]                                   //dollar sign indicate krte h ki mongodb ka operator use kr rhe h
+
     })
 
-    if (existingUser){
+    if (existingUser) {
         throw new ApiError(409, "User already exists with this username or email");
     }
-    
+
 
     // ? mtlb optionally, acess ho skta ya nhi bhi
     console.log(req.files);                                                     //JUST TO STUDY the incoming request files, here 2 files are uploded together, later on in the controller whhile updating only 1 file will be uploaded so directly path we can take
@@ -89,7 +92,7 @@ const registerUser = asyncHandler(async (req, res) => {
         avatar_publicId: avatar.public_id,
         coverImage: coverImage?.url || "",                                          //cover image optionally thi so path bhi shyd hi milega, so otherwise empty value bhejo database mei
         coverImage_publicId: coverImage?.public_id || "",
-        email, 
+        email,
         password,
         username: username.toLowerCase()
     })
@@ -109,7 +112,7 @@ const registerUser = asyncHandler(async (req, res) => {
 
 });
 
-const loginUser = asyncHandler(async (req, res) =>{
+const loginUser = asyncHandler(async (req, res) => {
     // req body se-> data we'll take
     // username or email
     //find the user in database
@@ -117,8 +120,8 @@ const loginUser = asyncHandler(async (req, res) =>{
     //access and referesh token (generate krke-> already in user.model) user ko send krna
     //send the tokens in cookies
 
-    const {email, username, password} = req.body
-    console.log("Request Body is: ",req.body)
+    const { email, username, password } = req.body
+    console.log("Request Body is: ", req.body)
 
     if (!username && !email) {
         throw new ApiError(400, "username or email is required")
@@ -129,7 +132,7 @@ const loginUser = asyncHandler(async (req, res) =>{
     }
 
     const user = await User.findOne({                                       //db in another continent so takes time so await
-        $or: [{email}, {username}]                                          //mongoDB ke operator can be accessed using $
+        $or: [{ email }, { username }]                                          //mongoDB ke operator can be accessed using $
     })                                                                      //query from mongoDB database to find a user with given email or username
 
     if (!user) {
@@ -149,22 +152,22 @@ const loginUser = asyncHandler(async (req, res) =>{
 
 
     return res
-    .status(200)
-    .cookie("accessToken", accessToken, CookieOptions)
-    .cookie("refreshToken", refreshToken, CookieOptions) 
-    .json(
-        new ApiResponse(
-            200, 
-            {
-                user: loggedInUser, accessToken, refreshToken
-            },
-            "User logged In Successfully!!"
+        .status(200)
+        .cookie("accessToken", accessToken, CookieOptions)
+        .cookie("refreshToken", refreshToken, CookieOptions)
+        .json(
+            new ApiResponse(
+                200,
+                {
+                    user: loggedInUser, accessToken, refreshToken
+                },
+                "User logged In Successfully!!"
+            )
         )
-    )
 
 });
 
-const logoutUser = asyncHandler(async(req, res) => {
+const logoutUser = asyncHandler(async (req, res) => {
     //clear access and refresh tokens 
     //clear cookies
     await User.findByIdAndUpdate(
@@ -181,10 +184,10 @@ const logoutUser = asyncHandler(async(req, res) => {
     )
 
     return res
-    .status(200)
-    .clearCookie("accessToken", CookieOptions)                            //database se remove hogya, so user ke browser se bhi remove krdo
-    .clearCookie("refreshToken", CookieOptions)
-    .json(new ApiResponse(200, {}, "User logged Out"))
+        .status(200)
+        .clearCookie("accessToken", CookieOptions)                            //database se remove hogya, so user ke browser se bhi remove krdo
+        .clearCookie("refreshToken", CookieOptions)
+        .json(new ApiResponse(200, {}, "User logged Out"))
 });
 
 const refreshAccessToken = asyncHandler(async (req, res) => {
@@ -196,41 +199,41 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 
     try {
         const decodedToken = jwt.verify(incomingRefreshToken, process.env.REFRESH_TOKEN_SECRET)
-    
+
         const user = await User.findById(decodedToken?._id)
-    
+
         if (!user) {
             throw new ApiError(401, "Invalid refresh token")
         }
-    
+
         if (incomingRefreshToken !== user?.refreshToken) {
-            throw new ApiError(401, "Refresh token is expired or used")    
+            throw new ApiError(401, "Refresh token is expired or used")
         }
         //if the refreshtoken that is incoming(front-end se ek  request ayegi) and the one saved in database are same, we will again generate new access and refresh tokens
-        
-        const {accessToken, refreshToken: newRefreshToken} = await generateAccessAndRefereshTokens(user._id)
-    
+
+        const { accessToken, refreshToken: newRefreshToken } = await generateAccessAndRefereshTokens(user._id)
+
         return res
-        .status(200)
-        .cookie("accessToken", accessToken, CookieOptions)
-        .cookie("refreshToken", newRefreshToken, CookieOptions)
-        .json(
-            new ApiResponse(
-                200, 
-                {accessToken, newRefreshToken},
-                "Access token refreshed"
+            .status(200)
+            .cookie("accessToken", accessToken, CookieOptions)
+            .cookie("refreshToken", newRefreshToken, CookieOptions)
+            .json(
+                new ApiResponse(
+                    200,
+                    { accessToken, newRefreshToken },
+                    "Access token refreshed"
+                )
             )
-        )
     } catch (error) {
         throw new ApiError(401, error?.message || "Invalid refresh token")
     }
 
 })
 
-const changeCurrentPassword = asyncHandler(async(req, res) => {                                     //we need not to worry about if the user is logged in, or cookies over here, as when we will make the route, there we will added the verifyJWT middleware(Auth) to check that
-    const {oldPassword, newPassword} = req.body
+const changeCurrentPassword = asyncHandler(async (req, res) => {                                     //we need not to worry about if the user is logged in, or cookies over here, as when we will make the route, there we will added the verifyJWT middleware(Auth) to check that
+    const { oldPassword, newPassword } = req.body
 
-    
+
 
     const user = await User.findById(req.user?._id)                                                 //auth middleware jo route m use krnege that will give us req.user
     const isPasswordCorrect = await user.isPasswordCorrect(oldPassword)                             //we made a method in user.model isPasswordCorrect, returns true/false
@@ -240,22 +243,22 @@ const changeCurrentPassword = asyncHandler(async(req, res) => {                 
     }
 
     user.password = newPassword
-    await user.save({validateBeforeSave: false})                                                    //pre hook is defined in user.model that runs before the save operation
+    await user.save({ validateBeforeSave: false })                                                    //pre hook is defined in user.model that runs before the save operation
 
     return res
-    .status(200)
-    .json(new ApiResponse(200, {}, "Password changed successfully"))
+        .status(200)
+        .json(new ApiResponse(200, {}, "Password changed successfully"))
 })
 
 
-const getCurrentUser = asyncHandler(async(req, res) => {                                            //the auth middleware will be used in route, which gives us req.user
-    return res          
-    .status(200)
-    .json(new ApiResponse(200, req.user, "Current user fetched successfully"))
+const getCurrentUser = asyncHandler(async (req, res) => {                                            //the auth middleware will be used in route, which gives us req.user
+    return res
+        .status(200)
+        .json(new ApiResponse(200, req.user, "Current user fetched successfully"))
 })
 
-const updateAccountDetails = asyncHandler(async(req, res) => {                                      //the auth middleware will be used in route, which gives us req.user      
-    const {fullName, email} = req.body
+const updateAccountDetails = asyncHandler(async (req, res) => {                                      //the auth middleware will be used in route, which gives us req.user      
+    const { fullName, email } = req.body
     console.log(req.body)
 
     if (!fullName || !email) {                                                                      //if i wanted either one, then &&
@@ -268,23 +271,23 @@ const updateAccountDetails = asyncHandler(async(req, res) => {                  
         throw new ApiError(409, "User with this email already exists")
     }
 
-    const user = await User.findByIdAndUpdate(req.user?._id ,
+    const user = await User.findByIdAndUpdate(req.user?._id,
         {
             $set: {
                 fullName,                                   //fullname: fullName is also correct, but in ES6 single fullName is considered as same
                 email: email                                //sirf email likhte then also same/correct
             }
         },
-        {new: true}                                         //if new is true then update hone ke baad jo info hai woh return hogi
+        { new: true }                                         //if new is true then update hone ke baad jo info hai woh return hogi
 
     ).select("-password -refreshToken")                                    //don't want password field in the user instance that we get from querying the database
 
     return res
-    .status(200)
-    .json(new ApiResponse(200, user, "Account details updated successfully"))           
+        .status(200)
+        .json(new ApiResponse(200, user, "Account details updated successfully"))
 });
 
-const updateUserAvatar = asyncHandler(async(req, res) => {                                          //2 middleware use krnege in routing, first multer then auth wala to check the logged in userxx
+const updateUserAvatar = asyncHandler(async (req, res) => {                                          //2 middleware use krnege in routing, first multer then auth wala to check the logged in userxx
     const avatarLocalPath = req.file?.path                                                          //req.file milega multer middleware ke through
 
     if (!avatarLocalPath) {
@@ -295,7 +298,7 @@ const updateUserAvatar = asyncHandler(async(req, res) => {                      
 
     if (!avatar.url) {
         throw new ApiError(400, "Error while uploading avatar")
-        
+
     }
 
     const avatarPublicId = req.user?.avatar_publicId
@@ -304,22 +307,22 @@ const updateUserAvatar = asyncHandler(async(req, res) => {                      
     const user = await User.findByIdAndUpdate(
         req.user?._id,
         {
-            $set:{
+            $set: {
                 avatar: avatar.url,
                 avatar_publicId: avatar.public_id
             }
         },
-        {new: true}
+        { new: true }
     ).select("-password -refreshToken")
 
     return res
-    .status(200)
-    .json(
-        new ApiResponse(200, user, "Avatar image updated successfully")
-    )
+        .status(200)
+        .json(
+            new ApiResponse(200, user, "Avatar image updated successfully")
+        )
 })
 
-const updateUserCoverImage = asyncHandler(async(req, res) => {
+const updateUserCoverImage = asyncHandler(async (req, res) => {
     const coverImageLocalPath = req.file?.path
 
     if (!coverImageLocalPath) {
@@ -330,7 +333,7 @@ const updateUserCoverImage = asyncHandler(async(req, res) => {
 
     if (!coverImage.url) {
         throw new ApiError(400, "Error while uploading on avatar")
-        
+
     }
 
     const coverImagePublicId = req.user?.coverImage_publicId
@@ -341,24 +344,24 @@ const updateUserCoverImage = asyncHandler(async(req, res) => {
     const user = await User.findByIdAndUpdate(
         req.user?._id,
         {
-            $set:{
+            $set: {
                 coverImage: coverImage.url,
                 coverImage_publicId: coverImage.public_id
             }
         },
-        {new: true}
+        { new: true }
     ).select("-password -refreshToken")
 
     return res
-    .status(200)
-    .json(
-        new ApiResponse(200, user, "Cover image updated successfully")
-    )
+        .status(200)
+        .json(
+            new ApiResponse(200, user, "Cover image updated successfully")
+        )
 })
 
-const getUserChannelProfile = asyncHandler(async(req, res) => {                                     //the route for going on a channel will have username like youtube/chaiaurcode
+const getUserChannelProfile = asyncHandler(async (req, res) => {                                     //the route for going on a channel will have username like youtube/chaiaurcode
     console.log(req.params)                                                                         //req.params (express.js) is an object containing URL route parameter(key-value pairs)
-    const {username} = req.params
+    const { username } = req.params
 
     if (!username?.trim()) {
         throw new ApiError(400, "username is missing")
@@ -379,7 +382,7 @@ const getUserChannelProfile = asyncHandler(async(req, res) => {                 
             }
         },
         {
-            $lookup: {                                      
+            $lookup: {
                 from: "subscriptions",
                 localField: "_id",
                 foreignField: "subscriber",
@@ -396,7 +399,7 @@ const getUserChannelProfile = asyncHandler(async(req, res) => {                 
                 },
                 isSubscribed: {
                     $cond: {                                                                           //condition, iske 3 param hote hai if, then, else
-                        if: {$in: [req.user?._id, "$subscribers.subscriber"]},                         //jo doc aaya subscribers usmei user hai ya nhi, we will return true ya false value to front-end dev
+                        if: { $in: [req.user?._id, "$subscribers.subscriber"] },                         //jo doc aaya subscribers usmei user hai ya nhi, we will return true ya false value to front-end dev
                         then: true,
                         else: false
                     }
@@ -424,24 +427,24 @@ const getUserChannelProfile = asyncHandler(async(req, res) => {                 
     }
 
     return res
-    .status(200)
-    .json(
-        new ApiResponse(200, channel[0], "User channel fetched successfully")
-        //new ApiResponse(200, channel[0].subscriberCount, "no. of subs fetched successfully")
-        //new ApiResponse(200, channel[0].channelsSubscribedToCount, "subscribed to count fetched successfully")
+        .status(200)
+        .json(
+            new ApiResponse(200, channel[0], "User channel fetched successfully")
+            //new ApiResponse(200, channel[0].subscriberCount, "no. of subs fetched successfully")
+            //new ApiResponse(200, channel[0].channelsSubscribedToCount, "subscribed to count fetched successfully")
 
-    )
+        )
 })
 
-const getWatchHistory = asyncHandler(async(req, res) => {
+const getWatchHistory = asyncHandler(async (req, res) => {
     const user = await User.aggregate([                                                             //aggregation pipeline retruns an array, with objects as elements, so here the first element(the    matched user) will contain all values
         {
-            $match: {                                                                               
+            $match: {
                 _id: new mongoose.Types.ObjectId(req.user._id)                                      //in aggregation pipelines ,code goes directly and mongoose kaam nhi krta, _id we get is string and it goes directly and doesn't match the mongoDB id, so we have to separately make mongoose ki object id  (otherwise mongoose behind the scene convert krdeta hai mongoDB ki objectId mei)
             }
         },
         {
-            $lookup: {                                                                              
+            $lookup: {
                 from: "videos",                                                                     //Schema name as saved in mongoDB(lowercase and plural of the name in model)
                 localField: "watchHistory",
                 foreignField: "_id",
@@ -465,8 +468,8 @@ const getWatchHistory = asyncHandler(async(req, res) => {
                         }
                     },
                     {
-                        $addFields:{
-                            owner:{                                                                 //we use the same name so that owner gets overwritten, and we had an array in owner with first element(object) containing 3fields from user, those 3 will be directly written in owner field
+                        $addFields: {
+                            owner: {                                                                 //we use the same name so that owner gets overwritten, and we had an array in owner with first element(object) containing 3fields from user, those 3 will be directly written in owner field
                                 $first: "$owner"                                                    //First takes first element  from onwer array(has only 1 object)($ kyuki owner field mei se nikalni hai values)
                             }
                         }
@@ -478,11 +481,11 @@ const getWatchHistory = asyncHandler(async(req, res) => {
 
     console.log(user);                                                          //TO STUDY
     return res
-    .status(200)
-    .json( new ApiResponse( 200, user[0].watchHistory, "Watch history fetched successfully" ))
+        .status(200)
+        .json(new ApiResponse(200, user[0].watchHistory, "Watch history fetched successfully"))
 })
 
-export { 
+export {
     registerUser,
     loginUser,
     logoutUser,
@@ -494,4 +497,4 @@ export {
     updateUserCoverImage,
     getUserChannelProfile,
     getWatchHistory
- };
+};
