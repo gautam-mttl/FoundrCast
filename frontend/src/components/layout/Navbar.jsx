@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '../../hooks/useAuth';
+import { normalizeMediaUrl } from '../../utils/formatters';
 import { Button } from '../common/Button';
 import { Radio, Search, X, User, LogOut, Settings, Menu } from 'lucide-react';
 
@@ -29,6 +28,8 @@ export const Navbar = ({
     if (onSearchChange) onSearchChange('');
     if (onSearchSubmit) onSearchSubmit('');
   };
+
+  const avatarUrl = normalizeMediaUrl(user?.avatar || '');
 
   return (
     <header
@@ -197,10 +198,10 @@ export const Navbar = ({
                   border: '1px solid var(--brand-primary)',
                 }}
               >
-                {user?.avatar ? (
+                {avatarUrl ? (
                   <img
-                    src={user.avatar}
-                    alt={user.username}
+                    src={avatarUrl}
+                    alt={user?.username}
                     style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                   />
                 ) : (

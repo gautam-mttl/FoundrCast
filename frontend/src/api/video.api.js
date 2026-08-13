@@ -1,4 +1,5 @@
 import { axiosClient } from './axiosClient';
+import { normalizeMediaUrl } from '../utils/formatters';
 
 /**
  * Fetch paginated video feed from backend.
@@ -18,11 +19,16 @@ export const getVideoByIdApi = async (videoId) => {
 
   if (response?.data) {
     const video = response.data;
+    const rawUrl = video.videoUrl || video.videoFile || '';
+    const rawThumb = video.thumbnail || '';
+
     return {
       ...response,
       data: {
         ...video,
-        videoUrl: video.videoUrl || video.videoFile || '',
+        videoUrl: normalizeMediaUrl(rawUrl),
+        videoFile: normalizeMediaUrl(rawUrl),
+        thumbnail: normalizeMediaUrl(rawThumb),
         views: video.views ?? 0,
         totalLikes: video.totalLikes ?? video.tottalLikes ?? 0,
         totalComments: video.totalComments ?? 0,

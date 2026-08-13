@@ -1,5 +1,5 @@
 import React from 'react';
-import { formatDuration, formatViews, formatTimeAgo } from '../../utils/formatters';
+import { formatDuration, formatViews, formatTimeAgo, normalizeMediaUrl } from '../../utils/formatters';
 import { User, Play } from 'lucide-react';
 
 export const VideoCard = ({ video, onClick }) => {
@@ -8,7 +8,7 @@ export const VideoCard = ({ video, onClick }) => {
   const {
     _id,
     title = 'Untitled FoundrCast',
-    thumbnail = '',
+    thumbnail: rawThumbnail = '',
     duration = 0,
     views = 0,
     createdAt,
@@ -16,9 +16,10 @@ export const VideoCard = ({ video, onClick }) => {
     owner,
   } = video;
 
+  const thumbnail = normalizeMediaUrl(rawThumbnail);
   const channelObj = channel || (typeof owner === 'object' ? owner : null);
   const channelName = channelObj?.username ? `@${channelObj.username}` : 'FoundrCast Creator';
-  const avatarUrl = channelObj?.avatar || '';
+  const avatarUrl = normalizeMediaUrl(channelObj?.avatar || '');
 
   return (
     <div

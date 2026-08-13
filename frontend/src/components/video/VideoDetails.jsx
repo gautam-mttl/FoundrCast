@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { formatViews, formatTimeAgo } from '../../utils/formatters';
+import { formatViews, formatTimeAgo, normalizeMediaUrl } from '../../utils/formatters';
 import { useAuth } from '../../hooks/useAuth';
 import { useToast } from '../../hooks/useToast';
 import { toggleVideoLikeApi, getLikedVideosApi } from '../../api/like.api';
@@ -31,7 +31,7 @@ export const VideoDetails = ({ video, onOpenAuth }) => {
   const channel = video?.channel;
   const channelId = channel?._id;
   const channelName = channel?.username ? `@${channel.username}` : 'FoundrCast Creator';
-  const avatarUrl = channel?.avatar || '';
+  const avatarUrl = normalizeMediaUrl(channel?.avatar || '');
 
   const isSelfChannel = currentUser?._id && channelId && currentUser._id === channelId;
 

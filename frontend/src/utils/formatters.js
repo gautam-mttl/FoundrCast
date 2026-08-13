@@ -58,3 +58,16 @@ export const formatTimeAgo = (dateInput) => {
   const years = Math.floor(months / 12);
   return `${years}y ago`;
 };
+
+/**
+ * Safely upgrade Cloudinary HTTP URLs to HTTPS to prevent mixed-content warnings.
+ * @param {string} url
+ * @returns {string}
+ */
+export const normalizeMediaUrl = (url) => {
+  if (!url || typeof url !== 'string') return '';
+  if (url.includes('cloudinary.com') && url.startsWith('http://')) {
+    return url.replace('http://', 'https://');
+  }
+  return url;
+};
