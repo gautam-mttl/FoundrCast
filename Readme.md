@@ -1,150 +1,209 @@
 # FoundrCast
- 
-> A video-first feedback platform for founders and VCs — built on a production-grade Node.js backend.
- 
-[![API Docs](https://img.shields.io/badge/API-Postman_Docs-orange?style=flat-square)](https://documenter.getpostman.com/view/41863970/2sBXirhnZn)
-[![Architecture](https://img.shields.io/badge/Architecture-Eraser.io-blue?style=flat-square)](https://app.eraser.io/workspace/YtPqZ1VogxGy1jzIDkzj)
-[![License](https://img.shields.io/badge/License-ISC-green?style=flat-square)](#license)
- 
+
+> A production-grade full-stack video and creator platform designed for startup founders to showcase product walkthroughs, engage audience feedback, and build creator channels.
+
+[![Live Demo](https://img.shields.io/badge/Live_Demo-Vercel-000000?style=for-the-badge&logo=vercel)](https://foundr-cast.vercel.app/)
+[![Backend API](https://img.shields.io/badge/Backend_API-Render-46E3B7?style=for-the-badge&logo=render&logoColor=white)](https://foundrcast.onrender.com)
+[![Postman Docs](https://img.shields.io/badge/API_Docs-Postman-FF6C37?style=for-the-badge&logo=postman&logoColor=white)](https://documenter.getpostman.com/view/41863970/2sBXirhnZn)
+[![Architecture](https://img.shields.io/badge/System_Design-Eraser.io-blue?style=for-the-badge)](https://app.eraser.io/workspace/YtPqZ1VogxGy1jzIDkzj)
+[![License](https://img.shields.io/badge/License-ISC-green?style=for-the-badge)](#license)
+
 ---
- 
-## The Idea
- 
-This started as a learning project — built to understand how industry-grade backends actually work.  
-JWT auth, MongoDB schema design, REST API structure, subscription workflows — the fundamentals.
- 
-But somewhere during development, the architecture started feeling familiar for a problem I kept noticing:
- 
-**Founders have no good place to show their product in motion and get real feedback from people who matter.**
- 
-Loom links get buried in Slack. YouTube is too public too early. Static decks miss the product feel entirely.
- 
-What if this backend powered a **closed-loop video feedback platform — exclusively for founders and VCs?**
- 
-- Founders post short-form product walkthroughs and UI demos
-- VCs and peers leave comments, replies, and tweet-style reactions  
-- Subscription engine lets you track founders you're watching
-- Channel dashboards become living founder profile pages
-The infrastructure already supports all of this.  
-The idea is just waiting for the right builder.
- 
-> *Built as a backend learning project. The use case found itself.*
- 
+
+## Overview
+
+**FoundrCast** is a complete, full-stack video platform featuring a modern glassmorphic React single-page application backed by a Node.js/Express REST API.
+
+Whether presenting short-form UI demos, product updates, or deep-dive technical masterclasses, FoundrCast equips creators and founders with a rich video streaming experience, social engagement tools (likes, comments, subscriptions), custom playlists, and a dedicated Creator Studio.
+
+- **Frontend App**: [https://foundr-cast.vercel.app/](https://foundr-cast.vercel.app/)
+- **Production Backend**: [https://foundrcast.onrender.com](https://foundrcast.onrender.com)
+- **API Documentation**: [Postman Collection Documenter](https://documenter.getpostman.com/view/41863970/2sBXirhnZn)
+
 ---
- 
-## What It Does
- 
-FoundrCast is a full-featured video platform backend — think YouTube's core engine, rebuilt from scratch with clean architecture and industry-standard practices.
- 
-| Feature | Description |
-|---|---|
-| Auth & Sessions | JWT-based login with access + refresh token rotation |
-| Video Management | Upload, update, delete, and stream video content |
-| Social Layer | Comments, replies, likes, dislikes on videos |
-| Subscriptions | Subscribe/unsubscribe with channel feed aggregation |
-| Channel Dashboard | Per-user stats, video history, subscriber counts |
-| Tweet System | Short-form post support alongside video content |
-| Secure File Handling | Cloudinary integration for video and image storage |
-| Pagination | Aggregation pipelines with cursor-based pagination |
- 
+
+## Core Features
+
+### 🎬 Video Experience & Player
+- **Custom HTML5 Video Player**: Custom timeline scrubbing, volume controls, mute toggle, duration formatting, and fullscreen support.
+- **View Counting**: Single view increment per video playback load to prevent double-counting.
+- **Feed & Discovery**: Paginated home video feed, category discovery chips (`Explore`), and related video suggestions on the Watch Page.
+- **Debounced Live Search**: Real-time video search with URL state persistence (`?q=`) without browser history pollution.
+
+### 👤 Creator Channels & Profiles
+- **Creator Channel Pages (`/channel/:username`)**: Custom channel header banner, avatar, subscriber counts, and aggregated video listings for any creator.
+- **Subscription Engine**: Real-time channel subscribe/unsubscribe toggle with instant badge and count updates.
+
+### 💬 Social & Engagement Layer
+- **Video Likes**: Like/unlike videos with instant UI update and personal Liked Videos collection (`/liked`).
+- **Threaded Comments**: Fetch, post, edit, and delete video comments with owner controls and comment liking.
+
+### 📚 Library & Playlists
+- **Custom Playlists**: Create, view, edit, and delete personal playlists (`/playlists`).
+- **Save to Playlist Modal**: Add or remove any video to/from user playlists directly from the Watch Page.
+
+### 🛠️ Creator Studio
+- **Channel Dashboard (`/studio`)**: Overview metrics displaying Total Views, Subscribers, Total Likes, and Published Video count.
+- **Upload Flow**: Multipart video and thumbnail upload with real-time percentage progress bar (`0% - 100%`).
+- **Video Management**: Update video details, replace thumbnails, toggle Public/Private visibility, and delete videos with ownership verification.
+
+### 🔒 Auth & Session Management
+- **JWT Token Rotation**: Dual token architecture (short-lived Access Tokens, long-lived Refresh Tokens).
+- **Cross-Site Cookie Security**: Configured HTTP-only `sameSite: "none"` and `secure: true` cookies for production Vercel-to-Render communication.
+- **Silent 401 Interceptor**: Axios interceptor automatically handles background token refreshes without interrupting the user session.
+
 ---
- 
-## Architecture
- 
+
+## System Architecture
+
+```mermaid
+graph TD
+    User["🌐 User Web Browser"] -->|HTTPS / SPA Navigation| Frontend["Frontend (React / Vite on Vercel)"]
+    Frontend -->|REST API Requests / JSON| Backend["Backend API (Express.js on Render)"]
+    Backend -->|JWT Auth & Metadata Queries| Database[("MongoDB Atlas Database")]
+    Backend -->|Multipart Media Uploads| Cloudinary["Cloudinary CDN (Video & Image Hosting)"]
+    Cloudinary -->|HTTPS CDN Streaming| Frontend
 ```
-src/
- ├── routes/          → API endpoint definitions
- ├── controllers/     → Business logic per resource
- ├── models/          → Mongoose schemas (User, Video, Comment, Tweet...)
- ├── middlewares/     → Auth guards, file upload handlers, error handling
- └── utils/           → Cloudinary client, JWT helpers, async wrappers
+
+---
+
+## Repository Structure
+
 ```
- 
-Full data model and system design →  
-[View Architecture on Eraser.io](https://app.eraser.io/workspace/YtPqZ1VogxGy1jzIDkzj)
- 
+FoundrCast/
+├── Backend/               # Node.js / Express.js REST API server
+│   ├── src/
+│   │   ├── controllers/   # Resource business logic (user, video, comment, like, subscription, playlist...)
+│   │   ├── db/            # MongoDB database connection initializer
+│   │   ├── middlewares/   # JWT authentication & Multer upload middleware
+│   │   ├── models/        # Mongoose schemas (User, Video, Comment, Like, Subscription, Playlist...)
+│   │   ├── routes/        # Express REST API routes
+│   │   └── utils/         # Cloudinary SDK client, AsyncHandler, ApiError, ApiResponse
+│   └── package.json
+├── frontend/              # React 18 / Vite Single Page Application
+│   ├── src/
+│   │   ├── api/           # Axios HTTP client & service endpoints
+│   │   ├── components/    # Reusable UI components (Navbar, VideoCard, VideoPlayer, Modals...)
+│   │   ├── context/       # Auth & Toast state context providers
+│   │   ├── hooks/         # Custom hooks (useAuth, useToast)
+│   │   ├── pages/         # Application routes (HomePage, WatchPage, ChannelPage, StudioPage...)
+│   │   └── utils/         # Date/view formatters & HTTPS media URL normalization
+│   └── package.json
+└── docs/                  # Architecture specs & phase implementation plans
+```
+
 ---
- 
-## API
- 
-40+ RESTful endpoints documented and tested in Postman.
- 
-[View Full API Documentation →](https://documenter.getpostman.com/view/41863970/2sBXirhnZn)
- 
-Key endpoint groups:
-- `/api/v1/users` — auth, profile, avatar
-- `/api/v1/videos` — CRUD, streaming, visibility
-- `/api/v1/comments` — threaded comments per video
-- `/api/v1/likes` — likes on videos, comments, tweets
-- `/api/v1/subscriptions` — subscribe, feed, subscriber list
-- `/api/v1/dashboard` — channel stats and analytics
-- `/api/v1/tweets` — short-form posts
----
- 
+
 ## Tech Stack
- 
-| Package | Purpose |
-|---|---|
-| Node.js + Express | Server and routing |
-| MongoDB + Mongoose | Database and ORM |
-| JWT + bcrypt | Authentication and password hashing |
-| Cloudinary | Video and image storage |
-| Multer | File upload handling |
-| cookie-parser | Cookie-based token management |
-| cors | Cross-origin request handling |
-| dotenv | Environment configuration |
-| mongoose-aggregate-paginate-v2 | Aggregation pagination |
-| nodemon | Development auto-restart |
- 
+
+| Domain | Technology | Purpose |
+|---|---|---|
+| **Frontend Framework** | React 18 + Vite | SPA architecture & fast build bundling |
+| **Routing & Client** | React Router v6 + Axios | Client-side routing & HTTP request client |
+| **Styling & UI** | Custom Vanilla CSS | Glassmorphism design system & responsive layouts |
+| **Icons** | Lucide React | Modern vector UI iconography |
+| **Backend Runtime** | Node.js (ES Modules) | Asynchronous server execution |
+| **API Framework** | Express.js (v5) | RESTful API routing & controller handlers |
+| **Database & ORM** | MongoDB + Mongoose | Schema validation & aggregation pipelines |
+| **Authentication** | JSON Web Tokens (JWT) + bcrypt | Token authentication & password hashing |
+| **Media Storage** | Cloudinary SDK + Multer | Video and thumbnail uploads, processing & CDN delivery |
+| **Hosting & Infra** | Vercel (Frontend), Render (Backend), MongoDB Atlas | Production deployment infrastructure |
+
 ---
- 
-## Run Locally
- 
-**Prerequisites:** Node.js 18+, MongoDB URI, Cloudinary account
- 
+
+## Engineering Highlights
+
+- **JWT Access & Refresh Token Rotation**: Implemented dual-token session management stored in secure HTTP-only cookies to prevent XSS vulnerability vectors.
+- **Automatic Token Refresh Interceptor**: Standardized Axios response interceptors catch 401 Unauthorized errors, issue silent refresh requests to `/users/refresh-token`, and seamlessly retry failed requests.
+- **Dynamic Media HTTPS Normalization**: Custom frontend URL parser automatically upgrades legacy HTTP Cloudinary URLs (`http://res.cloudinary.com`) to HTTPS (`https://res.cloudinary.com`), preventing browser mixed-content warnings on production Vercel SSL deployments.
+- **In-Place Debounced Routing**: Live search typing updates URL search parameters using `{ replace: true }`, enabling shareable query links (`/?q=keyword`) without creating redundant browser history states.
+- **Upload Progress Callbacks**: Multer and Cloudinary uploads report real-time percentage progress (`onUploadProgress`) to provide responsive user feedback during video publishing.
+
+---
+
+## Deployment Configuration
+
+- **Frontend Application**: Deployed on **Vercel** with automatic HTTPS and single-page app rewrite configuration.
+- **Backend API Server**: Deployed on **Render** Web Service executing Node.js native ES modules.
+- **Database**: Managed **MongoDB Atlas** cluster with indexed collections and aggregation pipelines.
+- **Media Delivery**: **Cloudinary** CDN with secure SSL streaming delivery.
+
+---
+
+## Known Limitation
+
+> [!NOTE]
+> **Watch History Tracking**: The frontend application fully integrates with `GET /api/v1/users/history` to render watch history records (`/history`). Currently, the backend controller does not automatically push viewed video IDs to the user's `watchHistory` array upon video playback. Watch history read support is fully integrated on the client, while automated history writing remains a planned backend feature.
+
+---
+
+## Local Setup Instructions
+
+### Prerequisites
+- Node.js 18+ installed
+- A running MongoDB Atlas instance or local MongoDB URI
+- A Cloudinary account (Cloud Name, API Key, API Secret)
+
+### 1. Clone the Repository
 ```bash
-# Clone the repo
 git clone https://github.com/gautam-mttl/FoundrCast.git
 cd FoundrCast
- 
-# Install dependencies
-npm install
- 
-# Set up environment variables
-cp .env.example .env
-# Fill in your values (see below)
- 
-# Start dev server
-npm run dev
 ```
- 
----
- 
-## Environment Variables
- 
-Create a `.env` file in the root:
- 
+
+### 2. Backend Setup
+```bash
+cd Backend
+npm install
+```
+
+Create a `.env` file in `Backend/`:
 ```env
 PORT=8000
-MONGODB_URI=your_mongodb_connection_string
- 
-ACCESS_TOKEN_SECRET=your_access_token_secret
+CORS_ORIGIN=http://localhost:5500
+MONGODB_URI=mongodb+srv://<username>:<password>@cluster0.mongodb.net
+
+ACCESS_TOKEN_SECRET=your_access_token_secret_key
 ACCESS_TOKEN_EXPIRY=1d
- 
-REFRESH_TOKEN_SECRET=your_refresh_token_secret
+
+REFRESH_TOKEN_SECRET=your_refresh_token_secret_key
 REFRESH_TOKEN_EXPIRY=10d
- 
-CLOUDINARY_CLOUD_NAME=your_cloud_name
-CLOUDINARY_API_KEY=your_api_key
-CLOUDINARY_API_SECRET=your_api_secret
+
+CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
+CLOUDINARY_API_KEY=your_cloudinary_api_key
+CLOUDINARY_API_SECRET=your_cloudinary_api_secret
 ```
- 
+
+Start the Backend dev server:
+```bash
+npm run dev
+```
+
+### 3. Frontend Setup
+In a new terminal window:
+```bash
+cd frontend
+npm install
+```
+
+Create a `.env` file in `frontend/`:
+```env
+VITE_API_BASE_URL=http://localhost:8000/api/v1
+```
+
+Start the Frontend dev server:
+```bash
+npm run dev
+```
+Open `http://localhost:5500` in your browser.
+
 ---
- 
+
+## Screenshots
+
+*(Optional preview screenshots can be added here)*
+
+---
+
 ## License
- 
-Licensed under the **ISC License** — use this however you want.
- 
----
- 
-*If this repo helped you understand backend architecture, leave a star. If you want to build the founder-facing product on top of this — reach out.*
+
+Licensed under the **ISC License**.
