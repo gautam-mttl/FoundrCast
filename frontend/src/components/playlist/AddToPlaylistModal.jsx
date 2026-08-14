@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { useToast } from '../../hooks/useToast';
 import {
@@ -26,32 +26,26 @@ export const AddToPlaylistModal = ({ isOpen, onClose, videoId }) => {
   const [description, setDescription] = useState('');
   const [creatingLoading, setCreatingLoading] = useState(false);
 
-  useEffect(() => {
-    let isMounted = true;
-
-    const fetchPlaylists = async () => {
-      if (!currentUser?._id) return;
-      setLoading(true);
-      try {
-        const response = await getUserPlaylistsApi(currentUser._id);
-        if (response?.data && isMounted) {
-          setPlaylists(response.data);
-        }
-      } catch (err) {
-        console.warn('Failed to load playlists:', err.message);
-      } finally {
-        if (isMounted) setLoading(false);
+  const fetchPlaylists = useCallback(async () => {
+    if (!currentUser?._id) return;
+    setLoading(true);
+    try {
+      const response = await getUserPlaylistsApi(currentUser._id);
+      if (response?.data) {
+        setPlaylists(response.data);
       }
-    };
+    } catch (err) {
+      console.warn('Failed to load playlists:', err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [currentUser?._id]);
 
+  useEffect(() => {
     if (isOpen && isAuthenticated && currentUser?._id) {
       fetchPlaylists();
     }
-
-    return () => {
-      isMounted = false;
-    };
-  }, [isOpen, isAuthenticated, currentUser?._id]);
+  }, [isOpen, isAuthenticated, currentUser?._id, fetchPlaylists]);
 
   const handleTogglePlaylist = async (playlist) => {
     const isAlreadyIn = Array.isArray(playlist.videos) && playlist.videos.includes(videoId);
