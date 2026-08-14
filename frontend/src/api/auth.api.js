@@ -107,5 +107,5 @@ export const getWatchHistoryApi = async () => {
  * @param {string} username
  */
 export const getChannelProfileApi = async (username) => {
-  return axiosClient.get(`/users/c/${username}`);
+  return axiosClient.get(`/users/c/${encodeURIComponent(username)}`);
 };

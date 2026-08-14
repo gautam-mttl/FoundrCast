@@ -30,7 +30,7 @@ export const VideoDetails = ({ video, onOpenAuth }) => {
   const [isPlaylistModalOpen, setIsPlaylistModalOpen] = useState(false);
 
   const videoId = video?._id;
-  const channel = video?.channel;
+  const channel = video?.channel || (typeof video?.owner === 'object' ? video?.owner : null);
   const channelId = channel?._id;
   const rawUsername = channel?.username || '';
   const channelName = rawUsername ? `@${rawUsername}` : 'FoundrCast Creator';
@@ -38,9 +38,13 @@ export const VideoDetails = ({ video, onOpenAuth }) => {
 
   const isSelfChannel = currentUser?._id && channelId && currentUser._id === channelId;
 
-  const handleNavigateChannel = () => {
+  const handleNavigateChannel = (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     if (rawUsername) {
-      navigate(`/channel/${rawUsername}`);
+      navigate(`/channel/${encodeURIComponent(rawUsername)}`);
     }
   };
 
