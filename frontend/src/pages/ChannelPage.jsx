@@ -184,15 +184,23 @@ export const ChannelPage = ({ onOpenAuth }) => {
         style={{
           position: 'relative',
           width: '100%',
-          height: '180px',
           borderRadius: '20px',
           overflow: 'hidden',
-          background: coverUrl ? '#000' : 'var(--brand-gradient)',
+          background: coverUrl ? 'var(--bg-dark-card)' : 'var(--brand-gradient)',
           border: '1px solid var(--glass-border)',
+          minHeight: coverUrl ? 'auto' : '140px',
         }}
       >
         {coverUrl && (
-          <img src={coverUrl} alt={channel.fullName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          <img
+            src={coverUrl}
+            alt={channel.fullName}
+            style={{
+              width: '100%',
+              height: 'auto',
+              display: 'block',
+            }}
+          />
         )}
       </div>
 
