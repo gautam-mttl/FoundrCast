@@ -200,7 +200,20 @@ Open `http://localhost:5500` in your browser.
 
 ## Screenshots
 
-*(Optional preview screenshots can be added here)*
+### Home Feed & Video Discovery
+![FoundrCast Home Feed](screenshots/home.png)
+
+### Video Watch Page & Custom Player
+![FoundrCast Watch Page](screenshots/watch%20page.png)
+
+### Discussion & Threaded Comments
+![FoundrCast Discussion and Comments](screenshots/watch%20page%20(comments).png)
+
+### Creator Channel Profile
+![FoundrCast Creator Channel](screenshots/creator%20channel.png)
+
+### Creator Studio & Channel Management
+![FoundrCast Creator Studio](screenshots/creator%20studio.png)
 
 ---
 
